@@ -48,12 +48,17 @@ class LSTMDecoder(Decoder):
             # print("processing timestep", t)
             input = x[:, 0].unsqueeze(1)
 
-            input_embed = self.embedding(input)
+            input_embed = self.embedding(input)  # batch, 1, embed
+
             output, hidden_cell = self.dec_module(input_embed, hidden_cell)
+            # output = (batch, 1, hidden)
+            # hidden = (num_layers, batch, hidden)
 
             if self.config.attention:
                 hidden, _ = hidden_cell
                 context, weights = self.attention(hidden, encoder_outputs, src_lengths)
+                # context = (batch, hidden)
+                # weights = (batch, src_len)
 
                 output = output.squeeze(1)  # batch, hidden
 
@@ -62,7 +67,7 @@ class LSTMDecoder(Decoder):
             outputs.append(output)
 
         outputs = torch.stack(outputs, dim=1)
-        logits = self.fc(outputs)
+        logits = self.fc(outputs)  # batch, trg_len, vocab
 
         # print(outputs)
         # print(type(logits), logits.shape)

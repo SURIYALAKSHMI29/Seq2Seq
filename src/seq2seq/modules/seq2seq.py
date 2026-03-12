@@ -18,5 +18,5 @@ class Seq2Seq(nn.Module):
         encoder_outputs, (hidden_cell) = self.encoder(src, src_lengths)
         # print("Hidden cell type", type(hidden_cell))
 
-        outputs = self.decoder(trg, (hidden_cell), encoder_outputs, src_lengths)
-        return outputs
+        logits = self.decoder(trg, (hidden_cell), encoder_outputs, src_lengths)
+        return logits  # batch, trg_len, vocab
