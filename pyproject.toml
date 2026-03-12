@@ -1,0 +1,21 @@
+[build-system]
+# Packages needed to build your project
+requires = ["setuptools>=61.0", "wheel"]
+# Backend that performs the build
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seq2seq"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "torch>=2.1.0"
+]
+
+[tool.setuptools.packages.find]
+# Look for packages inside the src folder
+where = ["src"]
+
+[tool.pytest.ini_options]
+log_cli = true
+log_cli_level = "DEBUG"
