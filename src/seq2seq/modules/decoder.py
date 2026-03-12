@@ -17,7 +17,9 @@ class Decoder(nn.Module):
         self.attention = dot_attention
         linear_in = config.hidden_size
         if config.attention:
-            linear_in = config.hidden_size * 2
+            linear_in *= 2
+        if config.bidirectional:
+            linear_in *= 2
         self.fc = nn.Linear(linear_in, config.vocab_size)
 
 
@@ -35,18 +37,18 @@ class LSTMDecoder(Decoder):
 
     def forward(
         self,
-        x: Tensor,
+        trg_input: Tensor,
         hidden_cell: tuple,
-        encoder_outputs: Tensor,
+        encoder_hiddens: Tensor,
         src_lengths: Tensor,
     ):
-        _, trg_len = x.shape
+        _, trg_len = trg_input.shape
 
         outputs = []
 
         for t in range(0, trg_len):
             # print("processing timestep", t)
-            input = x[:, 0].unsqueeze(1)
+            input = trg_input[:, 0].unsqueeze(1)
 
             input_embed = self.embedding(input)  # batch, 1, embed
 
@@ -54,19 +56,19 @@ class LSTMDecoder(Decoder):
             # output = (batch, 1, hidden)
             # hidden = (num_layers, batch, hidden)
 
+            output = output.squeeze(1)  # batch, hidden
             if self.config.attention:
                 hidden, _ = hidden_cell
-                context, weights = self.attention(hidden, encoder_outputs, src_lengths)
+                context, weights = self.attention(hidden, encoder_hiddens, src_lengths)
                 # context = (batch, hidden)
                 # weights = (batch, src_len)
-
-                output = output.squeeze(1)  # batch, hidden
 
                 output = torch.cat((output, context), dim=1)
 
             outputs.append(output)
 
         outputs = torch.stack(outputs, dim=1)
+        print(outputs.shape)
         logits = self.fc(outputs)  # batch, trg_len, vocab
 
         # print(outputs)
