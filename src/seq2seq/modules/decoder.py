@@ -48,7 +48,7 @@ class LSTMDecoder(Decoder):
 
         for t in range(0, trg_len):
             # print("processing timestep", t)
-            input = trg_input[:, 0].unsqueeze(1)
+            input = trg_input[:, t].unsqueeze(1)
 
             input_embed = self.embedding(input)  # batch, 1, embed
 
@@ -68,11 +68,12 @@ class LSTMDecoder(Decoder):
             outputs.append(output)
 
         outputs = torch.stack(outputs, dim=1)
-        print(outputs.shape)
+        # print(outputs.shape)
         logits = self.fc(outputs)  # batch, trg_len, vocab
 
         # print(outputs)
         # print(type(logits), logits.shape)
         # print("Target length", trg_len)
 
+        # print("Logits shape", logits.shape)
         return logits
