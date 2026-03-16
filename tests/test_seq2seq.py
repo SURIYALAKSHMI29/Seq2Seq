@@ -21,39 +21,40 @@ def model_setup():
     trg_output = torch.tensor([[7, 6, 5, EOS], [4, 3, EOS, PAD], [2, EOS, PAD, PAD]])
 
     src_lengths = (src != PAD).sum(dim=1)
+    vocab_size = 10
 
     encoder_config = EncoderConfig(
         type="lstm",
-        vocab_size=VOCAB_SIZE,
+        vocab_size=vocab_size,
         embed_size=EMBED_SIZE,
         hidden_size=HIDDEN_SIZE,
     )
 
     decoder_config = DecoderConfig(
         type="lstm",
-        vocab_size=VOCAB_SIZE,
+        vocab_size=vocab_size,
         embed_size=EMBED_SIZE,
         hidden_size=HIDDEN_SIZE,
     )
 
     model = Seq2Seq(encoder_config, decoder_config)
 
-    return src, trg_input, trg_output, src_lengths, model
+    return src, vocab_size, trg_input, trg_output, src_lengths, model
 
 
 def test_forward(model_setup):
-    src, trg_input, trg_output, src_lengths, model = model_setup
+    src, vocab_size, trg_input, trg_output, src_lengths, model = model_setup
 
     output = model(src, trg_input, src_lengths)
     batch_size, trg_len = trg_output.shape
 
     print("Output\n", output.shape)
 
-    assert output.shape == (batch_size, trg_len, VOCAB_SIZE), "Output shape mismatch"
+    assert output.shape == (batch_size, trg_len, vocab_size), "Output shape mismatch"
 
     predictions = output.argmax(dim=2)
     print(predictions)
-    assert predictions.min() >= 0 and predictions.max() < VOCAB_SIZE
+    assert predictions.min() >= 0 and predictions.max() < vocab_size
 
 
 def test_attention_weights():
@@ -87,12 +88,12 @@ def test_attention_weights():
 
 
 def test_backward(model_setup):
-    src, trg_input, trg_output, src_lengths, model = model_setup
+    src, vocab_size, trg_input, trg_output, src_lengths, model = model_setup
     output = model(src, trg_input, src_lengths)
 
     model.zero_grad()
     criterion = nn.CrossEntropyLoss(ignore_index=PAD)
-    loss = criterion(output.reshape(-1, VOCAB_SIZE), trg_output.reshape(-1))
+    loss = criterion(output.reshape(-1, vocab_size), trg_output.reshape(-1))
 
     loss.backward()
 
@@ -104,10 +105,10 @@ def test_backward(model_setup):
 
 
 def test_loss_without_ignore(model_setup):
-    src, trg_input, trg_output, src_lengths, model = model_setup
+    src, vocab_size, trg_input, trg_output, src_lengths, model = model_setup
     output = model(src, trg_input, src_lengths)
 
-    logits = output.reshape(-1, VOCAB_SIZE)
+    logits = output.reshape(-1, vocab_size)
     targets = trg_output.reshape(-1)
 
     criterion = nn.CrossEntropyLoss(ignore_index=PAD)
