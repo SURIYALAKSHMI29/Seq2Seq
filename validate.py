@@ -1,5 +1,5 @@
+import torch
 import torch.nn as nn
-import time
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
@@ -7,12 +7,12 @@ from seq2seq.data import get_dataloader
 from seq2seq.modules.seq2seq import Seq2Seq
 from configs.seq2seq_config import ENCODER_CONFIG, DECODER_CONFIG, TRAIN_CONFIG, PAD
 from seq2seq.schemas import EncoderConfig, DecoderConfig
-from trainer import train_epoch, val_epoch
+from trainer import val_epoch
 
 
-def train():
+def validate():
     print("Started training")
-    (src_vocab, trg_vocab), train_dataloader, val_dataloader = get_dataloader()
+    (src_vocab, trg_vocab), _, val_dataloader = get_dataloader()
 
     ENCODER_CONFIG["vocab_size"] = len(src_vocab)
     DECODER_CONFIG["vocab_size"] = len(trg_vocab)
@@ -25,21 +25,18 @@ def train():
 
     print("Model instantiated")
     model = Seq2Seq(encoder_config, decoder_config)
-    criterion = nn.CrossEntropyLoss(ignore_index=PAD)
-    optimizer = optim.Adam(model.parameters(), lr=TRAIN_CONFIG["LR"])
+    model = model.load_state_dict(torch.load(TRAIN_CONFIG["PATH"]))
 
+    criterion = nn.CrossEntropyLoss(ignore_index=PAD)
     # path = "/home/suriya-nts0309/seq2seq/trained_models/Seq2Seq_e20_wa.pth"
 
-    start = time.time()
     for epoch in range(TRAIN_CONFIG["EPOCHS"]):
-        train_loss = train_epoch(model, criterion, optimizer, train_dataloader)
         val_loss = val_epoch(model, criterion, val_dataloader)
 
-        print(f"Epoch {epoch}  |  Train {train_loss}  |  Val {val_loss}")
-    print("Time taken", time.time() - start)
+        print(f"Epoch {epoch}  |  Val {val_loss}")
 
     # torch.save(model.state_dict(), path)
 
 
 if __name__ == "__main__":
-    train()
+    validate()
