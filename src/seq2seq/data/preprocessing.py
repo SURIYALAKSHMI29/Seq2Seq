@@ -1,5 +1,6 @@
 import torch
 from torch.nn.utils.rnn import pad_sequence
+from tokenizers import Tokenizer, models, trainers, pre_tokenizers
 
 
 def build_vocab(sentences):
@@ -13,6 +14,26 @@ def build_vocab(sentences):
         vocab[word] = len(vocab)
 
     return vocab
+
+
+## used for bpe
+def build_tokenizer(data, vocab_size, spl_tokens):
+    tokenizer = Tokenizer(models.BPE())
+    tokenizer.pre_tokenizer = pre_tokenizers.Whitespace()
+    trainer = trainers.BpeTrainer(vocab_size=vocab_size, special_tokens=spl_tokens)
+    tokenizer.train_from_iterator(data, trainer=trainer)
+    return tokenizer
+
+
+def encode_and_pad_bpe(sentences, tokenizer):
+    sequences = []
+    for sent in sentences:
+        seq = tokenizer.encode(sent).ids
+        sequences.append(torch.tensor(seq, dtype=torch.long))
+
+    return pad_sequence(
+        sequences, batch_first=True, padding_value=tokenizer.token_to_id("<PAD>")
+    )
 
 
 def encode_sentence(sentence, vocab):
@@ -33,15 +54,18 @@ def pad_data(sentences, vocab):
     return padded_seq
 
 
-def preprocess_dataset(dataset, src_vocab, trg_vocab):
+def preprocess_dataset(dataset, src_tokenizer, trg_tokenizer):
     src_sentences, trg_sentences = dataset["input"], dataset["output"]
     # print(src_sentences[5], trg_sentences[5])
 
     trg_sentences = [f"<SOS> {sentence} <EOS>" for sentence in trg_sentences]
     # print(trg_sentences[5])
 
-    src_padded = pad_data(src_sentences, src_vocab)
-    trg_padded = pad_data(trg_sentences, trg_vocab)
+    # src_padded = pad_data(src_sentences, src_vocab)
+    # trg_padded = pad_data(trg_sentences, trg_vocab)
+
+    src_padded = encode_and_pad_bpe(src_sentences, src_tokenizer)
+    trg_padded = encode_and_pad_bpe(trg_sentences, trg_tokenizer)
 
     src = src_padded
     trg_input = trg_padded[:, :-1]
