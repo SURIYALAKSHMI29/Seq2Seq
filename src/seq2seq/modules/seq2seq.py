@@ -13,10 +13,82 @@ class Seq2Seq(nn.Module):
         self.encoder = ENCODERS.build(encoder_config)
         self.decoder = DECODERS.build(decoder_config)
 
+        self.encoder_config = encoder_config
+        self.decoder_config = decoder_config
+
+        if encoder_config.bidirectional:
+            self.enc_out_proj = nn.Linear(
+                encoder_config.hidden_size * 2, encoder_config.hidden_size
+            )
+            self.state_proj = nn.Linear(
+                encoder_config.hidden_size * 2, encoder_config.hidden_size
+            )
+
+    def transform_encoder_state(self, outputs, hidden, cell):
+        ## transform encoder state if bidirectional
+        if self.encoder_config.bidirectional:
+
+            # outputs are used in decoder attn
+            # decoder hidden size = hidden size, to match the dimensions in dot prod, output is transformed
+            outputs = self.enc_out_proj(outputs)
+
+            # project 2H → H, only if decoder is not bidirectional
+            if not self.decoder_config.bidirectional:
+                num_layers, batch, hidden_size = hidden.shape
+                num_layers = num_layers // 2
+
+                # reshape to separate directions (frwd & bwd)
+                hidden = hidden.view(num_layers, 2, batch, hidden_size)
+                cell = cell.view(num_layers, 2, batch, hidden_size)
+
+                # concatenate frwd + bwd
+                hidden = torch.cat((hidden[:, 0], hidden[:, 1]), dim=2)
+                cell = torch.cat((cell[:, 0], cell[:, 1]), dim=2)
+
+                # project 2H → H
+                hidden = self.state_proj(hidden)
+                cell = self.state_proj(cell)
+
+        return outputs, (hidden, cell)
+
+    def adjust_layers(self, hidden, cell):
+        ## if enc and dec have same num of layers -> no issue
+        # if enc_layers > dec_layers -> return top dec_layers
+        # if enc_layers < dec_layers -> repeat last layer
+
+        enc_layers = hidden.size(0)
+        dec_layers = self.decoder_config.layers
+
+        if enc_layers == dec_layers:
+            return hidden, cell
+
+        elif enc_layers > dec_layers:
+            hidden = hidden[-dec_layers:]
+            cell = cell[-dec_layers:]
+            return hidden, cell
+
+        else:
+            repeat = dec_layers - enc_layers
+            hidden_extra = hidden[-1:].repeat(repeat, 1, 1)
+            cell_extra = cell[-1:].repeat(repeat, 1, 1)
+
+            hidden = torch.cat([hidden, hidden_extra], dim=0)
+            cell = torch.cat([cell, cell_extra], dim=0)
+
+            return hidden, cell
+
     def forward(self, src: Tensor, trg: Tensor, src_lengths: Tensor):
 
-        encoder_outputs, (hidden_cell) = self.encoder(src, src_lengths)
+        encoder_outputs, hidden_cell = self.encoder(src, src_lengths)
         # print("Hidden cell type", type(hidden_cell))
 
-        logits = self.decoder(trg, (hidden_cell), encoder_outputs, src_lengths)
+        # if bidirectional, transform encoder state
+        encoder_outputs, hidden_cell = self.transform_encoder_state(
+            encoder_outputs, *hidden_cell
+        )
+
+        # matching encoder and decoder layers
+        hidden_cell = self.adjust_layers(*hidden_cell)
+
+        logits = self.decoder(trg, hidden_cell, encoder_outputs, src_lengths)
         return logits  # batch, trg_len, vocab
