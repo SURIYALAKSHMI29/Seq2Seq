@@ -24,6 +24,7 @@ class LSTMEncoder(Encoder):
         self.enc_module = nn.LSTM(
             config.embed_size,
             config.hidden_size,
+            config.layers,
             batch_first=True,
             bidirectional=config.bidirectional,
         )

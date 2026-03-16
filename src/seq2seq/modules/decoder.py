@@ -16,10 +16,10 @@ class Decoder(nn.Module):
         self.dec_module: nn.Module | None = None
         self.attention = dot_attention
         linear_in = config.hidden_size
-        if config.attention:
-            linear_in *= 2
         if config.bidirectional:
             linear_in *= 2
+        if config.attention:
+            linear_in += config.hidden_size
         self.fc = nn.Linear(linear_in, config.vocab_size)
 
 
@@ -31,6 +31,7 @@ class LSTMDecoder(Decoder):
         self.dec_module = nn.LSTM(
             config.embed_size,
             config.hidden_size,
+            config.layers,
             batch_first=True,
             bidirectional=config.bidirectional,
         )
@@ -68,7 +69,6 @@ class LSTMDecoder(Decoder):
             outputs.append(output)
 
         outputs = torch.stack(outputs, dim=1)
-        # print(outputs.shape)
         logits = self.fc(outputs)  # batch, trg_len, vocab
 
         # print(outputs)
