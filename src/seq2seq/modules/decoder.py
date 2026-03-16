@@ -42,6 +42,7 @@ class LSTMDecoder(Decoder):
         hidden_cell: tuple,
         encoder_hiddens: Tensor,
         src_lengths: Tensor,
+        teacher_forcing: bool,
     ):
         _, trg_len = trg_input.shape
 
@@ -49,7 +50,10 @@ class LSTMDecoder(Decoder):
 
         for t in range(0, trg_len):
             # print("processing timestep", t)
-            input = trg_input[:, t].unsqueeze(1)
+            if t == 0 or teacher_forcing:
+                input = trg_input[:, t].unsqueeze(1)
+            else:
+                input = output.argmax(-1).unsqueeze(1)
 
             input_embed = self.embedding(input)  # batch, 1, embed
 

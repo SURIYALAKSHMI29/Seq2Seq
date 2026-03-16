@@ -77,7 +77,13 @@ class Seq2Seq(nn.Module):
 
             return hidden, cell
 
-    def forward(self, src: Tensor, trg: Tensor, src_lengths: Tensor):
+    def forward(
+        self,
+        src: Tensor,
+        trg: Tensor,
+        src_lengths: Tensor,
+        teacher_forcing: bool = True,
+    ):
 
         encoder_outputs, hidden_cell = self.encoder(src, src_lengths)
         # print("Hidden cell type", type(hidden_cell))
@@ -90,5 +96,7 @@ class Seq2Seq(nn.Module):
         # matching encoder and decoder layers
         hidden_cell = self.adjust_layers(*hidden_cell)
 
-        logits = self.decoder(trg, hidden_cell, encoder_outputs, src_lengths)
+        logits = self.decoder(
+            trg, hidden_cell, encoder_outputs, src_lengths, teacher_forcing
+        )
         return logits  # batch, trg_len, vocab
