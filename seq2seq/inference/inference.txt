@@ -1,0 +1,227 @@
+src vocab size 12931
+trg vocab size 17588
+
+### Epochs - 2
+Started training
+32
+src vocab size 12931
+trg vocab size 17588
+Model instantiated
+Epoch 1
+Epoch 1/2, Loss: 8.6629
+Epoch 2
+Epoch 2/2, Loss: 7.4902
+
+# inference
+Loss: 6.4668
+Time taken 2.7059578895568848
+
+### epochs 20
+Started training
+32
+src vocab size 12931
+trg vocab size 17588
+Model instantiated
+Epoch 1
+Epoch 1/20, Loss: 8.6623
+Epoch 2
+Epoch 2/20, Loss: 7.4988
+Epoch 3
+Epoch 3/20, Loss: 6.2854
+Epoch 4
+Epoch 4/20, Loss: 4.7230
+Epoch 5
+Epoch 5/20, Loss: 3.1411
+Epoch 6
+Epoch 6/20, Loss: 1.9657
+Epoch 7
+Epoch 7/20, Loss: 1.2941
+Epoch 8
+Epoch 8/20, Loss: 0.8788
+Epoch 9
+Epoch 9/20, Loss: 0.5947
+Epoch 10
+Epoch 10/20, Loss: 0.3958
+Epoch 11
+Epoch 11/20, Loss: 0.2685
+Epoch 12
+Epoch 12/20, Loss: 0.1836
+Epoch 13
+Epoch 13/20, Loss: 0.1347
+Epoch 14
+Epoch 14/20, Loss: 0.0998
+Epoch 15
+Epoch 15/20, Loss: 0.0760
+Epoch 16
+Epoch 16/20, Loss: 0.0594
+Epoch 17
+Epoch 17/20, Loss: 0.0478
+Epoch 18
+Epoch 18/20, Loss: 0.0393
+Epoch 19
+Epoch 19/20, Loss: 0.0330
+Epoch 20
+Epoch 20/20, Loss: 0.0283
+
+
+
+
+## 20 epochs with attention
+Started training
+32
+src vocab size 12931
+trg vocab size 17588
+Model instantiated
+Epoch 1
+Epoch 1/20, Loss: 8.6705
+Epoch 2
+Epoch 2/20, Loss: 7.4805
+Epoch 3
+Epoch 3/20, Loss: 6.2734
+Epoch 4
+Epoch 4/20, Loss: 4.7161
+Epoch 5
+Epoch 5/20, Loss: 3.1632
+Epoch 6
+Epoch 6/20, Loss: 1.9566
+Epoch 7
+Epoch 7/20, Loss: 1.2511
+Epoch 8
+Epoch 8/20, Loss: 0.8141
+Epoch 9
+Epoch 9/20, Loss: 0.5332
+Epoch 10
+Epoch 10/20, Loss: 0.3570
+Epoch 11
+Epoch 11/20, Loss: 0.2364
+Epoch 12
+Epoch 12/20, Loss: 0.1637
+Epoch 13
+Epoch 13/20, Loss: 0.1157
+Epoch 14
+Epoch 14/20, Loss: 0.0844
+Epoch 15
+Epoch 15/20, Loss: 0.0639
+Epoch 16
+Epoch 16/20, Loss: 0.0530
+Epoch 17
+Epoch 17/20, Loss: 0.0429
+Epoch 18
+Epoch 18/20, Loss: 0.0372
+Epoch 19
+Epoch 19/20, Loss: 0.0325
+Epoch 20
+Epoch 20/20, Loss: 0.0290
+Time taken 5601.175235509872
+
+# inference
+Loss: 9.4594
+Time taken 5.955087661743164
+
+
+
+
+
+## 1k data, 10 epochs, lr=0.0001, batch =32, with attention
+
+32
+src vocab size 3841
+trg vocab size 4779
+Model instantiated
+Epoch 0  |  Train 8.46347137977337  |  Val 8.367229461669922
+Epoch 1  |  Train 8.423629070150442  |  Val 8.24925446510315
+Epoch 2  |  Train 8.36694648348052  |  Val 8.001989245414734
+Epoch 3  |  Train 8.236528166409197  |  Val 6.9962462186813354
+Epoch 4  |  Train 7.934844773391197  |  Val 6.029865026473999
+Epoch 5  |  Train 7.689508273683745  |  Val 5.579260349273682
+Epoch 6  |  Train 7.542819467084161  |  Val 5.433481216430664
+Epoch 7  |  Train 7.415001030625968  |  Val 5.290761590003967
+Epoch 8  |  Train 7.278725689855115  |  Val 5.242076873779297
+Epoch 9  |  Train 7.222976289946457  |  Val 5.2228803634643555
+Time taken 222.67663502693176
+
+
+### epochs 5
+Started training
+128
+src vocab size 21573
+trg vocab size 35434
+Model instantiated
+Model is on device: cuda:0
+CUDA available: True
+Epoch 0  |  Train 5.153302244859583  |  Val 4.90437806044386
+Epoch 1  |  Train 3.790786587490755  |  Val 4.7293955887987025
+Epoch 2  |  Train 3.2990456746606265  |  Val 4.866105164720419
+Epoch 3  |  Train 3.0245802966286153  |  Val 5.142779289836615
+Epoch 4  |  Train 2.8550314445530667  |  Val 5.212181639783259
+Time taken 2660.588637113571
+
+### epochs 10
+Started training
+128
+src vocab size 21573
+trg vocab size 35434
+Model instantiated
+Model is on device: cuda:0
+CUDA available: True
+Epoch 0  |  Train 5.17097217503716  |  Val 4.79000728454948
+Epoch 1  |  Train 3.8059053746391744  |  Val 4.786584923524812
+Epoch 2  |  Train 3.292047051261453  |  Val 4.9886665881519585
+Epoch 3  |  Train 3.019633897332584  |  Val 5.111427253400776
+Epoch 4  |  Train 2.8529959541208605  |  Val 5.396259589934013
+Time taken 2666.340087890625
+
+
+
+
+Total number of samples: 1,35,842
+eng_prefixes [('i', "don't"), ('do', 'you'), ('i', 'want'), ('are', 'you'), ('i', 'have'), ('i', 'think'), ('i', "can't"), ('i', 'was'), ('he', 'is'), ("i'm", 'not')]
+After filtering, total num of pairs 14242
+train samples 11,393
+test samples 2,849
+Vocab size 4625
+Vocab size 6555
+Dataset built and saved
+
+
+
+embed = 128, hidden = 128, tf = 0.7, lr = 0.001, dp = 0.1, 0.2
+batch = 64
+src vocab size 4631
+trg vocab size 6623
+Model instantiated
+Model is on device: cuda:0
+CUDA available: True
+Epoch 0  |  Train 5.742411288469198  |  Val 4.36579434076945
+Epoch 1  |  Train 4.715673718372536  |  Val 3.8830335564083525
+Epoch 2  |  Train 4.31182201081814  |  Val 3.711230913798014
+Epoch 3  |  Train 4.01951558496699  |  Val 3.488591782251994
+Epoch 4  |  Train 3.726588819280017  |  Val 3.286232370800442
+Epoch 5  |  Train 3.506708078544233  |  Val 3.1345240857866075
+Epoch 6  |  Train 3.322501935106416  |  Val 3.0266640186309814
+Epoch 7  |  Train 3.160250258845324  |  Val 2.9101307339138454
+Epoch 8  |  Train 3.0453875211364063  |  Val 2.8594857745700413
+Epoch 9  |  Train 2.9218446209444013  |  Val 2.763120423422919
+Time taken 50.51135182380676
+
+
+embed = 128, hidden = 256, tf = 0.6, lr = 0.001, dp = 0.1, 0.2
+Started training
+64
+src vocab size 4631
+trg vocab size 6623
+Model instantiated
+Model is on device: cuda:0
+CUDA available: True
+Epoch 0  |  Train 5.501454337349151  |  Val 4.015327252282036
+Epoch 1  |  Train 4.5607901205563675  |  Val 3.669112624062432
+Epoch 2  |  Train 4.058179742131153  |  Val 3.3756170007917614
+Epoch 3  |  Train 3.6983855936114347  |  Val 2.9735866758558487
+Epoch 4  |  Train 3.4177361387114287  |  Val 2.8648116959465875
+Epoch 5  |  Train 3.1592659550672137  |  Val 2.734724013010661
+Epoch 6  |  Train 2.935435359038454  |  Val 2.6385573546091714
+Epoch 7  |  Train 2.8112081389187433  |  Val 2.582452000512017
+Epoch 8  |  Train 2.662697517006091  |  Val 2.5129650804731583
+Epoch 9  |  Train 2.5548072627136826  |  Val 2.4822372489505344
+Time taken 52.02581071853638
+
