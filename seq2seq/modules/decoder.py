@@ -1,0 +1,86 @@
+import torch
+import torch.nn as nn
+from torch import Tensor
+
+from seq2seq.modules.attention import dot_attention
+from seq2seq.registry import REGISTRY
+from seq2seq.schemas import DecoderConfig
+
+
+class Decoder(nn.Module):
+    def __init__(self, config: DecoderConfig):
+        super().__init__()
+        self.config = config
+
+        self.embedding = nn.Embedding(config.vocab_size, config.embed_size)
+        self.dec_module: nn.Module | None = None
+        self.attention = dot_attention
+        linear_in = config.hidden_size
+        if config.bidirectional:
+            linear_in *= 2
+        if config.attention:
+            linear_in += config.hidden_size
+        self.fc = nn.Linear(linear_in, config.vocab_size)
+
+        self.embed_dropout = nn.Dropout(0.2)
+        self.fc_dropout = nn.Dropout(0.3)
+
+
+@REGISTRY.register("decoder", "lstm")
+class LSTMDecoder(Decoder):
+
+    def __init__(self, config: DecoderConfig):
+        super().__init__(config)
+        self.dec_module = nn.LSTM(
+            config.embed_size,
+            config.hidden_size,
+            config.layers,
+            batch_first=True,
+            bidirectional=config.bidirectional,
+        )
+
+    def forward(
+        self,
+        trg_input: Tensor,
+        hidden_cell: tuple,
+        encoder_hiddens: Tensor,
+        src_lengths: Tensor,
+        teacher_forcing: bool,
+    ):
+        _, trg_len = trg_input.shape
+
+        outputs = []
+
+        for t in range(trg_len):
+            # print("processing timestep", t)
+            if t == 0 or teacher_forcing:
+                input = trg_input[:, t].unsqueeze(1)
+            else:
+                input = output.argmax(-1).unsqueeze(1)
+
+            input_embed = self.embed_dropout(self.embedding(input))  # batch, 1, embed
+
+            output, hidden_cell = self.dec_module(input_embed, hidden_cell)
+            # output = (batch, 1, hidden)
+            # hidden = (num_layers, batch, hidden)
+
+            output = output.squeeze(1)  # batch, hidden
+            if self.config.attention:
+                hidden, _ = hidden_cell
+                context, weights = self.attention(hidden, encoder_hiddens, src_lengths)
+                # context = (batch, hidden)
+                # weights = (batch, src_len)
+
+                output = torch.cat((output, context), dim=1)
+
+            outputs.append(output)
+
+        outputs = torch.stack(outputs, dim=1)
+        logits = self.fc_dropout(self.fc(outputs))  # batch, trg_len, vocab
+
+        # print(outputs)
+        # print(type(logits), logits.shape)
+        # print("Target length", trg_len)
+
+        # print("Logits shape", logits.shape)
+        return logits
