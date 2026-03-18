@@ -1,20 +1,26 @@
-[build-system]
-# Packages needed to build your project
-requires = ["setuptools>=61.0", "wheel"]
-# Backend that performs the build
-build-backend = "setuptools.build_meta"
-
-[project]
+[tool.poetry]
 name = "seq2seq"
 version = "0.1.0"
-requires-python = ">=3.10"
-dependencies = [
-    "torch>=2.1.0"
-]
+description = "Sequence to Sequence Translation"
+authors = ["Suriya Lakshmi <suriyalakshmi.moorthy@zohocorp.com>"]
+# This tells Poetry where your code is now (at the root)
+packages = [{include = "seq2seq"}, {include = "configs"}]
 
-[tool.setuptools.packages.find]
-# Look for packages inside the src folder
-where = ["src"]
+[tool.poetry.dependencies]
+python = "^3.10"
+torch = "^2.1.0"
+huggingface-hub = "^1.7.1"
+pillow = "^12.1.1"
+pyarrow = "^23.0.1"
+pytest = "^9.0.2"
+zipp = "^3.23.0"
+tensorboard = "^2.20.0"
+tokenizers = "^0.22.2"
+nltk = "^3.9.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 log_cli = true
