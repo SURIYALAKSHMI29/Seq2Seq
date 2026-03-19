@@ -9,3 +9,4 @@ data/processed/*
 trained_models/
 runs/
 data/
+outputs/
