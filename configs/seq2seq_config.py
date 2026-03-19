@@ -21,7 +21,7 @@ PATHS = {
     "VAL": "data/processed/ef_val_flt.pt",
     "SRC_VOCAB": "data/processed/ef_src_vocab_flt.pkl",
     "TRG_VOCAB": "data/processed/ef_trg_vocab_flt.pkl",
-    "MODEL": "trained_models/seq2seq_ef_ep10_lr0.001_b64_dp12_emb256_h512_tf0.6_flt2_t37.pth",
+    "MODEL": "trained_models/seq2seq_ef_ep10_lr0.001_b64_dp12_emb256_h512_tf0.6_flt2.pth",
     "RAW_DATA": "data/raw/eng-fra.txt",
 }
 

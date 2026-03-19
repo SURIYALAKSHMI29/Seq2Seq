@@ -1,0 +1,5 @@
+model_name: "lstm"
+embed_size: 256
+hidden_size: 512
+layers: 1
+bidirectional: True

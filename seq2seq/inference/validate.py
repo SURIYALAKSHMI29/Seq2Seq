@@ -1,21 +1,26 @@
 import torch
 import torch.nn as nn
+import hydra
+from hydra.utils import instantiate
 
-from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction, corpus_bleu
 
 from seq2seq.data import get_dataloader, get_tokenizers
 from seq2seq.modules.seq2seq import Seq2Seq
-from configs.seq2seq_config import (
-    ENCODER_CONFIG,
-    DECODER_CONFIG,
-    TRAIN_CONFIG,
-    PATHS,
-    PAD,
-)
-from seq2seq.schemas import EncoderConfig, DecoderConfig
+
+# from configs.seq2seq_config import (
+#     ENCODER_CONFIG,
+#     DECODER_CONFIG,
+#     TRAIN_CONFIG,
+#     PATHS,
+#     PAD,
+# )
+# from seq2seq.schemas import EncoderConfig, DecoderConfig
+
+from seq2seq.schemas_hydra import Config
 
 
-def evaluate(model, criterion, dataloader, trg_vocab_inv, EOS):
+def evaluate(model, criterion, dataloader, trg_vocab_inv, PAD, EOS):
     model.eval()
     total_loss = 0
     total_tokens = 0
@@ -25,6 +30,8 @@ def evaluate(model, criterion, dataloader, trg_vocab_inv, EOS):
     samples = []
 
     with torch.no_grad():
+        all_refs = []
+        all_preds = []
 
         for src, trg_input, trg_output in dataloader:
             src_lengths = (src != PAD).sum(dim=1)
@@ -66,18 +73,21 @@ def evaluate(model, criterion, dataloader, trg_vocab_inv, EOS):
                 pred = pred_words
 
                 if len(ref_words):
-                    total_bleu += sentence_bleu(ref, pred, smoothing_function=smooth)
+                    # total_bleu += sentence_bleu(ref, pred, smoothing_function=smooth)
+                    all_refs.append(ref)
+                    all_preds.append(pred)
 
             samples.append((src[0], trg_output[0], preds[0]))
 
     avg_loss = total_loss / len(dataloader)
     token_acc = correct_tokens / total_tokens
-    avg_bleu = total_bleu / len(dataloader.dataset)
+    # avg_bleu = total_bleu / len(dataloader.dataset)
 
+    avg_bleu = corpus_bleu(all_refs, all_preds, smoothing_function=smooth)
     return avg_loss, token_acc, avg_bleu, samples
 
 
-def decode_tokens(tensor, vocab, EOS):
+def decode_tokens(tensor, vocab, PAD, EOS):
     words = []
     # PAD = tokenizer.token_to_id("<PAD>")
     # EOS = tokenizer.token_to_id("<EOS>")
@@ -88,8 +98,9 @@ def decode_tokens(tensor, vocab, EOS):
     return " ".join(words)
 
 
-def validate():
-    print("Model path:", PATHS["MODEL"])
+@hydra.main(version_base=None, config_path="../../configs", config_name="seq2seq_main")
+def validate(cfg: Config):
+    print("Model path:", cfg.paths.model)
 
     # _, val_loader = get_dataloader()
     (src_vocab, trg_vocab), train_dataloader, val_dataloader = get_dataloader()
@@ -98,28 +109,29 @@ def validate():
     trg_vocab_inv = {idx: word for word, idx in trg_vocab.items()}
 
     EOS = trg_vocab["<EOS>"]
+    PAD = cfg.PAD
 
-    ENCODER_CONFIG["vocab_size"] = len(src_vocab)
-    DECODER_CONFIG["vocab_size"] = len(trg_vocab)
+    cfg.encoder.vocab_size = len(src_vocab)
+    cfg.decoder.vocab_size = len(trg_vocab)
 
     print("src vocab size", len(src_vocab))  # 30394
     print("trg vocab size", len(trg_vocab))  # 46715
 
     # src_tokenizer, trg_tokenizer = get_tokenizers()
 
-    encoder_config = EncoderConfig(**ENCODER_CONFIG)
-    decoder_config = DecoderConfig(**DECODER_CONFIG)
+    encoder_config = instantiate(cfg.encoder)
+    decoder_config = instantiate(cfg.decoder)
 
     print("Model instantiated")
     model = Seq2Seq(encoder_config, decoder_config)
-    model.load_state_dict(torch.load(PATHS["MODEL"], map_location=torch.device("cpu")))
+    model.load_state_dict(torch.load(cfg.paths.model, map_location=torch.device("cpu")))
 
     # criterion = nn.CrossEntropyLoss(ignore_index=trg_tokenizer.token_to_id("<PAD>"))
     criterion = nn.CrossEntropyLoss(ignore_index=PAD)
     # path = "/home/suriya-nts0309/seq2seq/trained_models/Seq2Seq_e20_wa.pth"
 
     avg_loss, token_acc, avg_bleu, samples = evaluate(
-        model, criterion, val_dataloader, trg_vocab_inv, EOS
+        model, criterion, val_dataloader, trg_vocab_inv, PAD, EOS
     )
 
     print(f"Average loss {avg_loss}")
@@ -128,9 +140,9 @@ def validate():
     print("\nSamples\n")
 
     for src_tensor, trg_tensor, pred_tensor in samples[:20]:
-        print("Input    :", decode_tokens(src_tensor, src_vocab_inv, -1))
-        print("Target   :", decode_tokens(trg_tensor, trg_vocab_inv, EOS))
-        print("Predicted:", decode_tokens(pred_tensor, trg_vocab_inv, EOS))
+        print("Input    :", decode_tokens(src_tensor, src_vocab_inv, PAD, -1))
+        print("Target   :", decode_tokens(trg_tensor, trg_vocab_inv, PAD, EOS))
+        print("Predicted:", decode_tokens(pred_tensor, trg_vocab_inv, PAD, EOS))
         print("\n", "--" * 50, "\n")
 
 

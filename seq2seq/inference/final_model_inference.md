@@ -29,7 +29,7 @@
 ## Training Performance
 - Average Loss: **1.1618**
 - Token Accuracy: **0.6823**
-- BLEU Score: **0.4108**
+- BLEU Score: **0.4423**
 
 ### Sample Predictions
 
@@ -66,7 +66,7 @@
 ## Validation Performance
 - Average Loss: **2.8239**
 - Token Accuracy: **0.5193**
-- BLEU Score: **0.2377**
+- BLEU Score: **0.2683**
 
 ### Sample Predictions
 

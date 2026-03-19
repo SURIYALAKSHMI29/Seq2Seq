@@ -1,0 +1,8 @@
+model_name: "lstm"
+embed_size: 256
+hidden_size: 512
+layers: 1
+bidirectional: False
+attention: True 
+teacher_forcing: True
+teacher_forcing_ratio: 0.6

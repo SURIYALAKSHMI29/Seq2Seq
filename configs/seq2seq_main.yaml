@@ -1,0 +1,20 @@
+defaults:
+  - _self_
+  - base_config
+  - encoder: lstm
+  - decoder: lstm
+
+train:
+  batch_size: 64
+  epochs: 10
+  lr: 0.001
+
+paths:
+  train: "data/processed/ef_train_flt.pt"
+  val: "data/processed/ef_val_flt.pt"
+  src_vocab: "data/processed/ef_src_vocab_flt.pkl"
+  trg_vocab: "data/processed/ef_trg_vocab_flt.pkl"
+  model: "trained_models/seq2seq_ef_ep10_lr0.001_b64_dp12_emb256_h512_tf0.6_flt2.pth"
+  raw_data: "data/raw/eng-fra.txt"
+
+PAD: 0

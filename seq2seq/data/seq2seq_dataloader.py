@@ -4,7 +4,8 @@ import pickle
 
 from seq2seq.data.load_dataset import load_ceng2french_dataset
 from seq2seq.data.preprocessing import preprocess_dataset, build_vocab, build_tokenizer
-from configs.seq2seq_config import TRAIN_CONFIG, PATHS, SRC_VOCAB_SIZE, TRG_VOCAB_SIZE
+
+# from configs.seq2seq_config import TRAIN_CONFIG, PATHS, SRC_VOCAB_SIZE, TRG_VOCAB_SIZE
 
 
 def build_and_save_dataset():
@@ -42,22 +43,22 @@ def build_and_save_dataset():
     print("Dataset built and saved")
 
 
-def get_dataloader():
+def get_dataloader(train_config, paths_config):
 
-    batch_size = TRAIN_CONFIG["BATCH_SIZE"]
+    batch_size = train_config.batch_size
 
     print(batch_size)
 
-    train = torch.load(PATHS["TRAIN"])
-    val = torch.load(PATHS["VAL"])
+    train = torch.load(paths_config.train)
+    val = torch.load(paths_config.val)
     src_train, trg_in_train, trg_out_train = train
     src_test, trg_in_val, trg_out_val = val
 
     train_dataset = TensorDataset(src_train, trg_in_train, trg_out_train)
     val_dataset = TensorDataset(src_test, trg_in_val, trg_out_val)
 
-    src_vocab = pickle.load(open(PATHS["SRC_VOCAB"], "rb"))
-    trg_vocab = pickle.load(open(PATHS["TRG_VOCAB"], "rb"))
+    src_vocab = pickle.load(open(paths_config.src_vocab, "rb"))
+    trg_vocab = pickle.load(open(paths_config.trg_vocab, "rb"))
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
@@ -66,7 +67,7 @@ def get_dataloader():
     # return train_loader, val_loader
 
 
-def get_tokenizers():
-    src_tokenizer = pickle.load(open(PATHS["SRC_VOCAB"], "rb"))
-    trg_tokenizer = pickle.load(open(PATHS["TRG_VOCAB"], "rb"))
+def get_tokenizers(paths_config):
+    src_tokenizer = pickle.load(open(paths_config.src_vocab, "rb"))
+    trg_tokenizer = pickle.load(open(paths_config.trg_vocab, "rb"))
     return src_tokenizer, trg_tokenizer
