@@ -27,7 +27,7 @@ class DecoderConfig:
     teacher_forcing: Optional[bool] = True
     teacher_forcing_ratio: Optional[float] = 0.5
     category: str = "decoder"
-    max_trg_len: Optional[int] = 10
+    max_trg_len: Optional[int] = 12
 
 
 @dataclass
