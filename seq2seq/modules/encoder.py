@@ -34,6 +34,10 @@ class LSTMEncoder(Encoder):
             bidirectional=config.bidirectional,
         )
 
+    @property
+    def output_dim(self):
+        return self.config.hidden_size * (2 if self.config.bidirectional else 1)
+
     def forward(self, x: Tensor, lengths: Tensor):
         # print(x.shape)  # batch, seq_len
         x: Tensor = self.dropout(self.embedding(x))  # batch, seq_len, embed
@@ -64,6 +68,10 @@ class AttentionEncoder(Encoder):
 
         self.norm1 = nn.LayerNorm(config.embed_size)
         self.norm2 = nn.LayerNorm(config.embed_size)
+
+    @property
+    def output_dim(self):
+        return self.config.embed_size
 
     def forward(self, x: Tensor, lengths: Tensor):
         # print("raw x", x.shape)
