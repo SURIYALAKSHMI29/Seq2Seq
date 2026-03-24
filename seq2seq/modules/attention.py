@@ -23,17 +23,19 @@ def dot_attention(
 
 
 class Attention(nn.Module):
-    def __init__(self, embed_dim: int, attn_dim: int = None):
+
+    def __init__(self, d_model: int):
         super().__init__()
-        self.attn_dim = attn_dim if attn_dim is not None else embed_dim
 
-        self.query_proj = nn.Linear(embed_dim, self.attn_dim)
-        self.key_proj = nn.Linear(embed_dim, self.attn_dim)
-        self.value_proj = nn.Linear(embed_dim, self.attn_dim)
+        self.d_model = d_model
 
-        self.scale = self.attn_dim**0.5
+        self.query_proj = nn.Linear(d_model, d_model)
+        self.key_proj = nn.Linear(d_model, d_model)
+        self.value_proj = nn.Linear(d_model, d_model)
 
-        self.out_proj = nn.Linear(self.attn_dim, embed_dim)
+        self.scale = d_model**0.5
+
+        # self.out_proj = nn.Linear(d_model, d_model)
 
     def forward(self, query: Tensor, key: Tensor, value: Tensor, mask: Tensor = None):
         # print(
