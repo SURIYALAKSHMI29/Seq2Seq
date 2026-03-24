@@ -1,0 +1,4 @@
+model_name: "attention"
+embed_size: 512
+hidden_size: 512
+max_src_len: ${MAX_LEN}
