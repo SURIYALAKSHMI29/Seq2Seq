@@ -235,7 +235,7 @@ Average loss 2.823939079708523
 
 Token accuracy 0.5192527096406161
 
-Average BLEU 0.23774996473850357
+Average BLEU 0.2683
 
 
 ## batch = 64, tf = 0.6, dp = (0.1, 0.2), embed = 256, hidden = 512, 10 epoch lr = 0.001, nxt 5 epochs lr = 0.0001
@@ -244,7 +244,8 @@ Average loss 2.699438524246216
 
 Token accuracy 0.5426411865373645
 
-Average BLEU 0.2627080773452708
+Average BLEU 0.30045003674750365
+
 
 ## batch = 64, tf = 0.6, dp = (0.1, 0.2), embed = 256, hidden = 512, 10 epoch lr = 0.001, nxt 10 epochs lr = 0.0001
 
@@ -252,4 +253,39 @@ Average loss 2.745206011666192
 
 Token accuracy 0.5467769537934969
 
-Average BLEU 0.27048012910656216
+Average BLEU 0.31084734894931243
+
+
+# with same conf, + weight decay @adam = 0.01
+
+Average loss 2.8241232289208305
+
+Token accuracy 0.5182544209925841
+
+Average BLEU 0.2685535168633222
+
+
+# with same conf, + weight decay @adam = 0.001
+
+Average loss 2.805650101767646
+
+Token accuracy 0.5199182354059707
+
+Average BLEU 0.2703660101066189
+
+
+# with same conf, + weight decay @adam = 0.0001
+
+Average loss 2.834861691792806
+
+Token accuracy 0.5181593458832477
+
+Average BLEU 0.2658625556575482
+
+# with same conf, changed fc layer -2 seq
+
+Average loss 3.2669998009999595
+
+Token accuracy 0.5081289218482601
+
+Average BLEU 0.2645317751454443
