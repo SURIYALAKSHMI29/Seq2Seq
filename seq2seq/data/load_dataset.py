@@ -1,8 +1,6 @@
 import random
 from collections import Counter
 
-from configs.seq2seq_config import PATHS, MAX_LEN, NUM_PREFIXES
-
 
 def split_pairs(pairs):
     src, trg = [], []
@@ -13,14 +11,14 @@ def split_pairs(pairs):
     return {"src": src, "trg": trg}
 
 
-def get_common_prefixes(pairs):
+def get_common_prefixes(pairs, NUM_PREFIXES):
     starts = [tuple(s.split()[:2]) for s, _ in pairs if len(s.split()) >= 2]
     counter = Counter(starts)
     most_common = [word for word, _ in counter.most_common(NUM_PREFIXES)]
     return most_common
 
 
-def filterPair(pair, eng_prefixes):
+def filterPair(pair, eng_prefixes, MAX_LEN):
     if len(pair[0].split(" ")) > MAX_LEN or len(pair[1].split(" ")) > MAX_LEN:
         return False
 
@@ -28,13 +26,13 @@ def filterPair(pair, eng_prefixes):
     return first_two in eng_prefixes
 
 
-def filterPairs(pairs, eng_prefixes):
-    return [pair for pair in pairs if filterPair(pair, eng_prefixes)]
+def filterPairs(pairs, eng_prefixes, MAX_LEN):
+    return [pair for pair in pairs if filterPair(pair, eng_prefixes, MAX_LEN)]
 
 
-def load_ceng2french_dataset():
+def load_ceng2french_dataset(paths, MAX_LEN, NUM_PREFIXES):
     pairs = []
-    path = PATHS["RAW_DATA"]
+    path = paths.raw_data
     with open(path, encoding="utf-8") as f:
         for line in f:
             eng, fra = line.strip().lower().split("\t")
@@ -43,11 +41,11 @@ def load_ceng2french_dataset():
     print(pairs[:5])
     print("Total number of samples:", len(pairs))
 
-    eng_prefixes = get_common_prefixes(pairs)
+    eng_prefixes = get_common_prefixes(pairs, NUM_PREFIXES)
 
     print("eng_prefixes", eng_prefixes)
 
-    pairs = filterPairs(pairs, eng_prefixes)
+    pairs = filterPairs(pairs, eng_prefixes, MAX_LEN)
     print(f"After filtering, total num of pairs {len(pairs)}")
 
     random.shuffle(pairs)
