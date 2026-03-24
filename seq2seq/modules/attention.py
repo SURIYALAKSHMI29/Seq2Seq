@@ -3,34 +3,59 @@ import torch.nn as nn
 from torch import Tensor
 
 
-def dot_attention(hidden: Tensor, encoder_outputs: Tensor, src_lengths: Tensor):
+def dot_attention(
+    query: Tensor, key: Tensor, value: Tensor, mask: Tensor = None, scale: float = 1.0
+):
 
-    # hidden = (1, batch, hidden)
-    # encoder_outputs = (batch, src_len, hidden)
+    scores = torch.matmul(query, key) / scale
+    # print("scores", scores.shape)   batch, seq_len, seq_len
 
-    # hidden = hidden.permute(1, 2, 0)
-    hidden = hidden[-1].unsqueeze(2)
-    # (batch, hidden, 1)
+    if mask is not None:
+        scores = scores.masked_fill(mask == 0, float("-inf"))
 
-    batch, max_src_len, _ = encoder_outputs.shape
+    attn_weights = torch.softmax(scores, dim=-1)
+    # print("attn weights", attn_weights.shape)  # batch, seq_len, seq_len
 
-    scores = torch.bmm(encoder_outputs, hidden).squeeze(2)
-    # print("Scores\n", scores)
-    # print("\n Applying softmax before masking\n", torch.softmax(scores, dim=1))
+    context = torch.matmul(attn_weights, value)
+    # print("Context frm scaled dot attn", context.shape)  # batch, seq_len, attn_dim
 
-    mask = torch.arange(max_src_len).expand(batch, max_src_len) < src_lengths.unsqueeze(
-        1
-    )
+    return context
 
-    # print("\nmask\n", mask)
 
-    masked_scores = scores.masked_fill(mask == False, -1e9)
-    # print("masked_scores\n", masked_scores)
+class Attention(nn.Module):
+    def __init__(self, embed_dim: int, attn_dim: int = None):
+        super().__init__()
+        self.attn_dim = attn_dim if attn_dim is not None else embed_dim
 
-    weights = torch.softmax(masked_scores, dim=1)  # (batch, src_len)
-    # print("After masking", weights.shape, "\n", weights)
+        self.query_proj = nn.Linear(embed_dim, self.attn_dim)
+        self.key_proj = nn.Linear(embed_dim, self.attn_dim)
+        self.value_proj = nn.Linear(embed_dim, self.attn_dim)
 
-    context = torch.bmm(weights.unsqueeze(1), encoder_outputs).squeeze(1)
-    # print("Context", context.shape)    # (batch, hidden)
+        self.scale = self.attn_dim**0.5
 
-    return context, weights
+        self.out_proj = nn.Linear(self.attn_dim, embed_dim)
+
+    def forward(self, query: Tensor, key: Tensor, value: Tensor, mask: Tensor = None):
+        # print(
+        #     f"Query: {query.shape} | Key: {key.shape} | Value: {value.shape} | Mask: {mask.shape}"
+        # )
+
+        # query, key, value: batch, seq_len, embed
+        # mask = (batch, 1, src_len)
+
+        Q = self.query_proj(query)
+        K = self.key_proj(key)
+        V = self.value_proj(value)
+
+        # print(
+        #     f"\nAfter projection, \nQuery: {Q.shape} | Key: {K.shape} | Value: {V.shape}"
+        # )
+
+        # Q, K, V: batch, seq_len, attn_dim
+
+        # print("Scale", self.scale)
+        context = dot_attention(Q, K.transpose(-2, -1), V, mask, self.scale)
+
+        # context = self.out_proj(context)
+
+        return context
