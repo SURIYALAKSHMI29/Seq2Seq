@@ -9,4 +9,5 @@ data/processed/*
 trained_models/
 runs/
 data/
+!seq2seq/data/
 outputs/
