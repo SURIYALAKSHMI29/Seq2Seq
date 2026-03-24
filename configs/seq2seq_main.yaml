@@ -6,7 +6,7 @@ defaults:
 
 train:
   batch_size: 64
-  epochs: 10
+  epochs: 5
   lr: 0.001
 
 paths:
@@ -18,3 +18,5 @@ paths:
   raw_data: "data/raw/eng-fra.txt"
 
 PAD: 0
+MAX_LEN: 10
+NUM_PREFIXES: 10
