@@ -101,9 +101,13 @@ def decode_tokens(tensor, vocab, PAD, EOS):
 @hydra.main(version_base=None, config_path="../../configs", config_name="seq2seq_main")
 def validate(cfg: Config):
     print("Model path:", cfg.paths.model)
+    train_config = instantiate(cfg.train)
+    paths_config = instantiate(cfg.paths)
 
     # _, val_loader = get_dataloader()
-    (src_vocab, trg_vocab), train_dataloader, val_dataloader = get_dataloader()
+    (src_vocab, trg_vocab), train_dataloader, val_dataloader = get_dataloader(
+        train_config, paths_config
+    )
 
     src_vocab_inv = {idx: word for word, idx in src_vocab.items()}
     trg_vocab_inv = {idx: word for word, idx in trg_vocab.items()}
