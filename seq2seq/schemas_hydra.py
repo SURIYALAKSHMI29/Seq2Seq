@@ -12,6 +12,7 @@ class EncoderConfig:
     layers: Optional[int] = 1
     bidirectional: Optional[bool] = False
     category: str = "encoder"
+    max_src_len: Optional[int] = 10
 
 
 @dataclass
@@ -26,6 +27,7 @@ class DecoderConfig:
     teacher_forcing: Optional[bool] = True
     teacher_forcing_ratio: Optional[float] = 0.5
     category: str = "decoder"
+    max_trg_len: Optional[int] = 10
 
 
 @dataclass
