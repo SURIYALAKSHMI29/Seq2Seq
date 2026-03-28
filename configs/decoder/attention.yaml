@@ -1,3 +1,4 @@
 model_name: "attention"
 embed_size: 512
 hidden_size: 512
+num_heads: 2

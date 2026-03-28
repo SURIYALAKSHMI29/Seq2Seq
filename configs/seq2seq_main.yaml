@@ -1,20 +1,36 @@
 defaults:
   - _self_
   - base_config
-  - encoder: lstm
-  - decoder: lstm
+  - encoder: attention
+  - decoder: attention
 
 train:
   batch_size: 64
-  epochs: 5
+  epochs: 1
   lr: 0.001
 
+# paths:
+#   train: "data/processed/ef_train_flt.pt"
+#   val: "data/processed/ef_val_flt.pt"
+#   src_vocab: "data/processed/ef_src_vocab_flt.pkl"
+#   trg_vocab: "data/processed/ef_trg_vocab_flt.pkl"
+#   model: "trained_models/seq2seq_ef_final.pth"
+#   raw_data: "data/raw/eng-fra.txt"
+
+# paths:
+#   train: "data/processed/ef_train_french2eng.pt"
+#   val: "data/processed/ef_val_french2eng.pt"
+#   src_vocab: "data/processed/ef_src_vocab_french2eng.pkl"
+#   trg_vocab: "data/processed/ef_trg_vocab_french2eng.pkl"
+#   model: "trained_models/seq2seq_ef_french2eng.pth"
+#   raw_data: "data/raw/eng-fra.txt"
+
 paths:
-  train: "data/processed/ef_train_flt.pt"
-  val: "data/processed/ef_val_flt.pt"
-  src_vocab: "data/processed/ef_src_vocab_flt.pkl"
-  trg_vocab: "data/processed/ef_trg_vocab_flt.pkl"
-  model: "trained_models/seq2seq_ef_ep10_lr0.001_b64_dp12_emb256_h512_tf0.6_flt2.pth"
+  train: "data/processed/ef_train_fe_420.pt"
+  val: "data/processed/ef_val_fe_420.pt"
+  src_vocab: "data/processed/ef_src_vocab_fe_420.pkl"
+  trg_vocab: "data/processed/ef_trg_vocab_fe_420.pkl"
+  model: "trained_models/seq2seq_ef_french2eng.pth"
   raw_data: "data/raw/eng-fra.txt"
 
 PAD: 0

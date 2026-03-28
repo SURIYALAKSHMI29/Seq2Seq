@@ -11,8 +11,9 @@ class EncoderConfig:
     embed_size: int
     layers: Optional[int] = 1
     bidirectional: Optional[bool] = False
+    num_heads: Optional[int] = 1
     category: str = "encoder"
-    max_src_len: Optional[int] = 10
+    max_src_len: Optional[int] = 6
 
 
 @dataclass
@@ -24,10 +25,11 @@ class DecoderConfig:
     layers: Optional[int] = 1
     bidirectional: Optional[bool] = False
     attention: Optional[bool] = True
+    num_heads: Optional[int] = 1
     teacher_forcing: Optional[bool] = True
     teacher_forcing_ratio: Optional[float] = 0.5
     category: str = "decoder"
-    max_trg_len: Optional[int] = 12
+    max_trg_len: Optional[int] = 7
 
 
 @dataclass
