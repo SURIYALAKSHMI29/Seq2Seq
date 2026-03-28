@@ -22,20 +22,25 @@ def dot_attention(
     return context
 
 
-class Attention(nn.Module):
+class MultiHeadAttention(nn.Module):
 
-    def __init__(self, d_model: int):
+    def __init__(self, d_model: int, num_heads: int = 2):
         super().__init__()
 
+        if d_model % num_heads != 0:
+            raise ValueError("d_model must be divisible by num_heads")
+
         self.d_model = d_model
+        self.num_heads = num_heads
+        self.head_dim = d_model // num_heads
 
         self.query_proj = nn.Linear(d_model, d_model)
         self.key_proj = nn.Linear(d_model, d_model)
         self.value_proj = nn.Linear(d_model, d_model)
 
-        self.scale = d_model**0.5
+        self.scale = self.head_dim**0.5
 
-        # self.out_proj = nn.Linear(d_model, d_model)
+        self.out_proj = nn.Linear(d_model, d_model)
 
     def forward(self, query: Tensor, key: Tensor, value: Tensor, mask: Tensor = None):
         # print(
@@ -44,6 +49,8 @@ class Attention(nn.Module):
 
         # query, key, value: batch, seq_len, embed
         # mask = (batch, 1, src_len)
+
+        batch = query.shape[0]
 
         Q = self.query_proj(query)
         K = self.key_proj(key)
@@ -55,9 +62,23 @@ class Attention(nn.Module):
 
         # Q, K, V: batch, seq_len, attn_dim
 
+        Q = Q.view(
+            batch, Q.shape[1], self.num_heads, self.head_dim
+        )  # batch, seq, heads, head_dim
+
+        Q = Q.transpose(1, 2)  # batch, heads, seq, head_dim
+
+        K = K.view(batch, K.shape[1], self.num_heads, self.head_dim).transpose(1, 2)
+        # batch, heads, seq, head_dim
+
+        V = V.view(batch, V.shape[1], self.num_heads, self.head_dim).transpose(1, 2)
+
         # print("Scale", self.scale)
         context = dot_attention(Q, K.transpose(-2, -1), V, mask, self.scale)
 
-        # context = self.out_proj(context)
+        context = context.transpose(1, 2).contiguous()
+        context = context.view(batch, context.shape[1], self.d_model)
+
+        context = self.out_proj(context)
 
         return context

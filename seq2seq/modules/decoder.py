@@ -6,7 +6,7 @@ import random
 from seq2seq.modules.attention import dot_attention
 from seq2seq.registry import REGISTRY
 from seq2seq.schemas import DecoderConfig
-from seq2seq.modules.attention import Attention
+from seq2seq.modules.attention import MultiHeadAttention
 from seq2seq.modules.encoding import positional_encoding
 
 
@@ -142,26 +142,68 @@ class LSTMDecoder(Decoder):
         return logits
 
 
+class DecoderAttentionBlock(nn.Module):
+
+    def __init__(self, d_model: int, num_heads: int):
+        super().__init__()
+
+        self.self_attn = MultiHeadAttention(d_model, num_heads)
+        self.cross_attn = MultiHeadAttention(d_model, num_heads)
+
+        self.ffn = nn.Sequential(
+            nn.Linear(d_model, 4 * d_model),
+            nn.ReLU(),
+            nn.Linear(4 * d_model, d_model),
+        )
+
+        self.norm1 = nn.LayerNorm(d_model)
+        self.norm2 = nn.LayerNorm(d_model)
+        self.norm3 = nn.LayerNorm(d_model)
+
+    def forward(
+        self,
+        x: Tensor,
+        encoder_hiddens: Tensor,
+        trg_mask: Tensor,
+        src_mask: Tensor,
+    ):
+        attn_out = self.self_attn(
+            query=x,
+            key=x,
+            value=x,
+            mask=trg_mask,
+        )
+        x = self.norm1(x + attn_out)
+
+        cross_attn_out = self.cross_attn(
+            query=x,
+            key=encoder_hiddens,
+            value=encoder_hiddens,
+            mask=src_mask,
+        )
+        x = self.norm2(x + cross_attn_out)
+
+        ffn_out = self.ffn(x)
+        x = self.norm3(x + ffn_out)
+
+        return x
+
+
 @REGISTRY.register("decoder", "attention")
 class AttentionDecoder(Decoder):
     def __init__(self, config: DecoderConfig):
         super().__init__(config)
-        self.dec_module = Attention(config.embed_size)
-        self.cross_attn = Attention(config.embed_size)
-
-        self.pe = positional_encoding(config.max_trg_len, config.embed_size)
-
-        self.ffn = nn.Sequential(
-            nn.Linear(config.embed_size, 4 * config.embed_size),
-            nn.ReLU(),
-            nn.Linear(4 * config.embed_size, config.embed_size),
+        self.dec_module = nn.ModuleList(
+            [
+                DecoderAttentionBlock(config.embed_size, config.num_heads)
+                for _ in range(config.layers)
+            ]
+        )
+        self.register_buffer(
+            "pe", positional_encoding(config.max_trg_len, config.embed_size)
         )
 
         self.fc = nn.Linear(config.embed_size, config.vocab_size)
-
-        self.norm1 = nn.LayerNorm(config.embed_size)
-        self.norm2 = nn.LayerNorm(config.embed_size)
-        self.norm3 = nn.LayerNorm(config.embed_size)
 
     @property
     def input_dim(self):
@@ -172,19 +214,12 @@ class AttentionDecoder(Decoder):
         mask = torch.tril(mask).bool()
         return mask.unsqueeze(0)  # (1, trg_len, trg_len)
 
-    def forward(
-        self,
-        trg_input: Tensor,
-        encoder_hiddens: Tensor,
-        src_lengths: Tensor,
-        *args,
-        **kwargs
+    def _decoder_step(
+        self, trg_input: Tensor, encoder_hiddens: Tensor, src_lengths: Tensor
     ):
-        # print("raw x", x.shape)
         batch, trg_len = trg_input.shape
         max_src_len = encoder_hiddens.shape[1]
 
-        # print(x.shape)  # batch, seq_len
         x = self.embed_dropout(self.embedding(trg_input))  # batch, seq_len, embed
         # print("x embeddings", x.shape)
 
@@ -193,41 +228,52 @@ class AttentionDecoder(Decoder):
 
         look_ahead_mask = self.get_look_ahead_mask(trg_len)  # 1, trg_len, trg_len
         trg_pad_mask = (trg_input != 0).unsqueeze(1)  # batch, 1, trg_len
-        trg_mask = trg_pad_mask & look_ahead_mask
-        # print("trg_mask", trg_mask.shape)   # batch, trg_len, trg_len
+        trg_mask = (trg_pad_mask & look_ahead_mask).unsqueeze(1)
+        # print("trg_mask", trg_mask.shape)   # batch, 1, trg_len, trg_len
 
-        ## self - attention
-        self_attn_out = self.dec_module(
-            query=x,
-            key=x,
-            value=x,
-            mask=trg_mask,
-        )
-
-        ## residual connection
-        x = self.norm1(x + self_attn_out)
-
-        ## cross attention
         src_mask = (
-            torch.arange(max_src_len).expand(batch, max_src_len)
-            < src_lengths.unsqueeze(1)
-        ).unsqueeze(1)
+            (
+                torch.arange(max_src_len).expand(batch, max_src_len)
+                < src_lengths.unsqueeze(1)
+            )
+            .unsqueeze(1)
+            .unsqueeze(1)
+        )  # batch, 1, 1, trg_len
 
-        cross_attn_out = self.cross_attn(
-            query=x,
-            key=encoder_hiddens,
-            value=encoder_hiddens,
-            mask=src_mask,
-        )
-
-        x = self.norm2(x + cross_attn_out)
-
-        ## Feed forward network
-        ffn_out = self.ffn(x)
-        x = self.norm3(x + ffn_out)
-
-        # print("context:", context.shape)  # batch, seq_len, hidden_size
-        # print("context:", x[0, :5, :])
+        for layer in self.dec_module:
+            x = layer(
+                x,
+                encoder_hiddens,
+                trg_mask,
+                src_mask,
+            )
 
         logits = self.fc_dropout(self.fc(x))
         return logits
+
+    def forward(
+        self,
+        trg_input: Tensor,
+        encoder_hiddens: Tensor,
+        src_lengths: Tensor,
+        teacher_forcing: bool,
+        *args
+    ):
+        if teacher_forcing:
+            return self._decoder_step(trg_input, encoder_hiddens, src_lengths)
+
+        else:
+            generated = trg_input[:, 0].unsqueeze(1)  # <SOS>, (batch, 1)
+
+            for t in range(self.config.max_trg_len - 2):
+
+                logits = self._decoder_step(generated, encoder_hiddens, src_lengths)
+
+                nxt_token_logits = logits[:, -1, :]  # batch, last seq, vocab
+                nxt_token = nxt_token_logits.argmax(dim=-1).unsqueeze(1)  # batch, 1
+
+                generated = torch.cat([generated, nxt_token], dim=1)
+
+                # print("Generated at timestep", t, "shape", generated.shape)
+
+            return self._decoder_step(generated, encoder_hiddens, src_lengths)
