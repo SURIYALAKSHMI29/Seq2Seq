@@ -4,10 +4,10 @@ from collections import Counter
 
 def split_pairs(pairs):
     src, trg = [], []
-    for s, t in pairs:
-        t = "<SOS> " + t + " <EOS>"
-        src.append(s)
-        trg.append(t)
+    for eng, french in pairs:
+        eng = "<SOS> " + eng + " <EOS>"
+        src.append(french)
+        trg.append(eng)
     return {"src": src, "trg": trg}
 
 
@@ -18,16 +18,16 @@ def get_common_prefixes(pairs, NUM_PREFIXES):
     return most_common
 
 
-def filterPair(pair, eng_prefixes, MAX_LEN):
+def filterPair(pair, prefixes, MAX_LEN):
     if len(pair[0].split(" ")) > MAX_LEN or len(pair[1].split(" ")) > MAX_LEN:
         return False
 
     first_two = tuple(pair[0].split()[:2])
-    return first_two in eng_prefixes
+    return first_two in prefixes
 
 
-def filterPairs(pairs, eng_prefixes, MAX_LEN):
-    return [pair for pair in pairs if filterPair(pair, eng_prefixes, MAX_LEN)]
+def filterPairs(pairs, prefixes, MAX_LEN):
+    return [pair for pair in pairs if filterPair(pair, prefixes, MAX_LEN)]
 
 
 def load_ceng2french_dataset(paths, MAX_LEN, NUM_PREFIXES):
@@ -41,11 +41,11 @@ def load_ceng2french_dataset(paths, MAX_LEN, NUM_PREFIXES):
     print(pairs[:5])
     print("Total number of samples:", len(pairs))
 
-    eng_prefixes = get_common_prefixes(pairs, NUM_PREFIXES)
+    prefixes = get_common_prefixes(pairs, NUM_PREFIXES)
 
-    print("eng_prefixes", eng_prefixes)
+    # print("prefixes", prefixes)
 
-    pairs = filterPairs(pairs, eng_prefixes, MAX_LEN)
+    pairs = filterPairs(pairs, prefixes, MAX_LEN)
     print(f"After filtering, total num of pairs {len(pairs)}")
 
     random.shuffle(pairs)
