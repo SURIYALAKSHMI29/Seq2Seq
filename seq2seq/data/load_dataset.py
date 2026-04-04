@@ -43,7 +43,7 @@ def load_ceng2french_dataset(paths, MAX_LEN, NUM_PREFIXES):
 
     prefixes = get_common_prefixes(pairs, NUM_PREFIXES)
 
-    # print("prefixes", prefixes)
+    print("prefixes", prefixes)
 
     pairs = filterPairs(pairs, prefixes, MAX_LEN)
     print(f"After filtering, total num of pairs {len(pairs)}")

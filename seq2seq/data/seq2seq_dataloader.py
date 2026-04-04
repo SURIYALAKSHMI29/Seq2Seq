@@ -14,7 +14,7 @@ from seq2seq.schemas_hydra import Config
 @hydra.main(version_base=None, config_path="../../configs", config_name="seq2seq_main")
 def build_and_save_dataset(cfg: Config):
     paths_config = instantiate(cfg.paths)
-    MAX_LEN, NUM_PREFIXES = cfg.MAX_LEN, cfg.NUM_PREFIXES
+    MAX_LEN, NUM_PREFIXES = cfg.data.MAX_LEN, cfg.data.NUM_PREFIXES
 
     train, test = load_ceng2french_dataset(paths_config, MAX_LEN, NUM_PREFIXES)
 
@@ -38,16 +38,14 @@ def build_and_save_dataset(cfg: Config):
     src, trg_in, trg_out = preprocess_dataset(train, src_vocab, trg_vocab)
     src_test, trg_in_test, trg_out_test = preprocess_dataset(test, src_vocab, trg_vocab)
 
-    with open("data/processed/ef_src_vocab_flt_b32.pkl", "wb") as f:
+    with open("data/processed_r/ef_src_vocab_fe.pkl", "wb") as f:
         pickle.dump(src_vocab, f)
 
-    with open("data/processed/ef_trg_vocab_flt_b32.pkl", "wb") as f:
+    with open("data/processed_r/ef_trg_vocab_fe.pkl", "wb") as f:
         pickle.dump(trg_vocab, f)
 
-    torch.save(((src, trg_in, trg_out)), "data/processed/ef_train_flt_b32.pt")
-    torch.save(
-        (src_test, trg_in_test, trg_out_test), "data/processed/ef_val_flt_b32.pt"
-    )
+    torch.save(((src, trg_in, trg_out)), "data/processed_r/ef_train_fe.pt")
+    torch.save((src_test, trg_in_test, trg_out_test), "data/processed_r/ef_val_fe.pt")
 
     print("Dataset built and saved")
 
