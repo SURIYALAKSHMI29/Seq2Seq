@@ -17,7 +17,7 @@ from seq2seq.modules.seq2seq import Seq2Seq
 # )
 # from seq2seq.schemas import EncoderConfig, DecoderConfig
 
-from seq2seq.schemas_hydra import Config
+from seq2seq.schemas import Config
 
 
 def evaluate(model, criterion, dataloader, trg_vocab_inv, PAD, EOS):

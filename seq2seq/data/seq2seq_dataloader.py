@@ -6,7 +6,7 @@ from hydra.utils import instantiate
 
 from seq2seq.data.load_dataset import load_ceng2french_dataset
 from seq2seq.data.preprocessing import preprocess_dataset, build_vocab, build_tokenizer
-from seq2seq.schemas_hydra import Config
+from seq2seq.schemas import Config
 
 # from configs.seq2seq_config import TRAIN_CONFIG, PATHS, SRC_VOCAB_SIZE, TRG_VOCAB_SIZE
 

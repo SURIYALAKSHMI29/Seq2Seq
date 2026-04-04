@@ -12,7 +12,7 @@ from seq2seq.data import get_dataloader
 from seq2seq.modules.seq2seq import Seq2Seq
 from seq2seq.training.trainer import train_epoch, val_epoch
 
-from seq2seq.schemas_hydra import Config
+from seq2seq.schemas import Config
 
 # from configs.seq2seq_config import ENCODER_CONFIG, DECODER_CONFIG, TRAIN_CONFIG, PAD
 # from seq2seq.schemas import EncoderConfig, DecoderConfig
@@ -68,16 +68,16 @@ def train(cfg: Config):
     encoder_config = instantiate(cfg.encoder)
     decoder_config = instantiate(cfg.decoder)
 
-    run_name = f"attention_{decoder_config.attention}_lr{train_config.lr}_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-    writer = SummaryWriter(log_dir=f"runs/seq2seq_experiments/{run_name}")
-    log_params(writer, encoder_config, decoder_config, train_config)
+    # run_name = f"attention_{decoder_config.attention}_lr{train_config.lr}_{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    writer = SummaryWriter(log_dir=f"runs/seq2seq_experiments")
+    # log_params(writer, encoder_config, decoder_config, train_config)
 
     model = Seq2Seq(encoder_config, decoder_config)
     print("Model instantiated")
-    criterion = nn.CrossEntropyLoss(ignore_index=cfg.PAD)
+    criterion = nn.CrossEntropyLoss(ignore_index=cfg.data.PAD)
     optimizer = optim.Adam(model.parameters(), lr=train_config.lr)
 
-    path = "/home/suriya-nts0309/seq2seq/trained_models/seq2seq_en2tam_ep10_lr0.001_b64_dp12_emb256_h512_tf0.6.pth"
+    path = "/home/suriya-nts0309/seq2seq/trained_models/attention/lr0.001/ep5/layer1/heads4/seq2seq_fe.pth"
 
     start = time.time()
     for epoch in range(train_config.epochs):
@@ -90,7 +90,7 @@ def train(cfg: Config):
 
     print("Time taken", time.time() - start)
     writer.close()
-    torch.save(model.state_dict(), path)
+    # torch.save(model.state_dict(), path)
 
 
 if __name__ == "__main__":
