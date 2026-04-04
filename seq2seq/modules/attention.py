@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch import Tensor
 
 
-def dot_attention(
+def dot_product(
     query: Tensor, key: Tensor, value: Tensor, mask: Tensor = None, scale: float = 1.0
 ):
 
@@ -74,7 +74,7 @@ class MultiHeadAttention(nn.Module):
         V = V.view(batch, V.shape[1], self.num_heads, self.head_dim).transpose(1, 2)
 
         # print("Scale", self.scale)
-        context = dot_attention(Q, K.transpose(-2, -1), V, mask, self.scale)
+        context = dot_product(Q, K.transpose(-2, -1), V, mask, self.scale)
 
         context = context.transpose(1, 2).contiguous()
         context = context.view(batch, context.shape[1], self.d_model)

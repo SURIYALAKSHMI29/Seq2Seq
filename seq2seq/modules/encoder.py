@@ -19,7 +19,7 @@ class Encoder(nn.Module):
         )
         self.enc_module: nn.Module | None = None
 
-        self.dropout = nn.Dropout(0.2)
+        self.embed_dropout: nn.Dropout | None = None
 
 
 @REGISTRY.register("encoder", "lstm")
@@ -34,13 +34,15 @@ class LSTMEncoder(Encoder):
             bidirectional=config.bidirectional,
         )
 
+        self.embed_dropout = nn.Dropout(config.embed_dropout)
+
     @property
     def output_dim(self):
         return self.config.hidden_size * (2 if self.config.bidirectional else 1)
 
     def forward(self, x: Tensor, lengths: Tensor):
         # print(x.shape)  # batch, seq_len
-        x: Tensor = self.dropout(self.embedding(x))  # batch, seq_len, embed
+        x: Tensor = self.embed_dropout(self.embedding(x))  # batch, seq_len, embed
 
         packed = pack_padded_sequence(
             x, lengths, batch_first=True, enforce_sorted=False
@@ -53,21 +55,30 @@ class LSTMEncoder(Encoder):
         return {"outputs": outputs, "hidden": hidden, "cell": cell}
 
 
-class EncoderAttentionBlock(nn.Module):
-
-    def __init__(self, d_model: int, num_heads: int):
+class TransformerEncoderLayer(nn.Module):
+    def __init__(
+        self,
+        d_model: int,
+        num_heads: int,
+        attn_dropout: int,
+        ffn_dropout: int,
+        ffn_dim: int,
+    ):
         super().__init__()
 
         self.self_attn = MultiHeadAttention(d_model, num_heads)
 
         self.ffn = nn.Sequential(
-            nn.Linear(d_model, 4 * d_model),
+            nn.Linear(d_model, ffn_dim * d_model),
             nn.ReLU(),
-            nn.Linear(4 * d_model, d_model),
+            nn.Linear(ffn_dim * d_model, d_model),
         )
 
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
+
+        self.attn_dropout = nn.Dropout(attn_dropout)
+        self.ffn_dropout = nn.Dropout(ffn_dropout)
 
     def forward(
         self,
@@ -80,24 +91,32 @@ class EncoderAttentionBlock(nn.Module):
             value=x,
             mask=mask,
         )
-        x = self.norm1(x + attn_out)
+        x = self.norm1(x + self.attn_dropout(attn_out))
 
         ffn_out = self.ffn(x)
-        x = self.norm2(x + ffn_out)
+        x = self.norm2(x + self.ffn_dropout(ffn_out))
 
         return x
 
 
-@REGISTRY.register("encoder", "attention")
-class AttentionEncoder(Encoder):
+@REGISTRY.register("encoder", "transformer")
+class TransformerEncoder(Encoder):
     def __init__(self, config: EncoderConfig):
         super().__init__(config)
         self.enc_module = nn.ModuleList(
             [
-                EncoderAttentionBlock(config.embed_size, config.num_heads)
+                TransformerEncoderLayer(
+                    config.embed_size,
+                    config.num_heads,
+                    config.attn_dropout,
+                    config.ffn_dropout,
+                    config.ffn_dim,
+                )
                 for _ in range(config.layers)
             ]
         )
+
+        self.embed_dropout = nn.Dropout(config.embed_dropout)
 
         self.register_buffer(
             "pe", positional_encoding(config.max_src_len, config.embed_size)
@@ -112,7 +131,7 @@ class AttentionEncoder(Encoder):
         batch, max_src_len = x.shape
 
         # print(x.shape)  # batch, seq_len
-        x = self.dropout(self.embedding(x))  # batch, seq_len, embed
+        x = self.embed_dropout(self.embedding(x))  # batch, seq_len, embed
         # print("x embeddings", x.shape)
 
         x = x + self.pe[:, :max_src_len, :]

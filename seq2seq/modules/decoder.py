@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch import Tensor
 import random
 
-from seq2seq.modules.attention import dot_attention
+from seq2seq.modules.attention import dot_product
 from seq2seq.registry import REGISTRY
 from seq2seq.schemas import DecoderConfig
 from seq2seq.modules.attention import MultiHeadAttention
@@ -15,8 +15,6 @@ class Decoder(nn.Module):
         super().__init__()
         self.config = config
 
-        self.tf_ratio = config.teacher_forcing_ratio
-
         self.embedding = nn.Embedding(config.vocab_size, config.embed_size)
         self.dec_module: nn.Module | None = None
         self.fc: nn.Module | None = None
@@ -27,8 +25,8 @@ class Decoder(nn.Module):
         #     nn.Linear(config.hidden_size, config.embed_size),
         # )
 
-        self.embed_dropout = nn.Dropout(0.1)
-        self.fc_dropout = nn.Dropout(0.2)
+        self.embed_dropout: nn.Dropout | None = None
+        self.fc_dropout: nn.Dropout | None = None
 
     @property
     def needs_hidden(self):
@@ -37,9 +35,10 @@ class Decoder(nn.Module):
 
 @REGISTRY.register("decoder", "lstm")
 class LSTMDecoder(Decoder):
-
     def __init__(self, config: DecoderConfig):
         super().__init__(config)
+
+        self.tf_ratio = config.teacher_forcing_ratio
         self.dec_module = nn.LSTM(
             config.embed_size,
             config.hidden_size,
@@ -48,13 +47,16 @@ class LSTMDecoder(Decoder):
             bidirectional=config.bidirectional,
         )
 
-        self.attention = dot_attention
+        self.attention = dot_product
         linear_in = config.hidden_size
         if config.bidirectional:
             linear_in *= 2
         if config.attention:
             linear_in += config.hidden_size
         self.fc = nn.Linear(linear_in, config.vocab_size)
+
+        self.embed_dropout = nn.Dropout(self.config.embed_dropout)
+        self.fc_dropout = nn.Dropout(self.config.fc_dropout)
 
     @property
     def input_dim(self):
@@ -97,7 +99,7 @@ class LSTMDecoder(Decoder):
             if t == 0 or use_teacher_forcing:
                 input = trg_input[:, t].unsqueeze(1)
             else:
-                input = output.argmax(-1).unsqueeze(1)
+                input = logits_step.argmax(-1).unsqueeze(1)
 
             input_embed = self.embed_dropout(self.embedding(input))  # batch, 1, embed
 
@@ -126,13 +128,14 @@ class LSTMDecoder(Decoder):
 
                 output = torch.cat((output, context), dim=1)
 
-            outputs.append(output)
+            logits_step = self.fc(output)
+            outputs.append(logits_step)
 
         outputs = torch.stack(outputs, dim=1)
         # fc_proj = self.fc_proj(self.fc_dropout(outputs))
         # logits = fc_proj @ self.embedding.weight.T  # batch, trg_len, vocab
 
-        logits = self.fc_dropout(self.fc(outputs))  # batch, trg_len, vocab
+        logits = self.fc_dropout(outputs)  # batch, trg_len, vocab
 
         # print(outputs)
         # print(type(logits), logits.shape)
@@ -142,23 +145,35 @@ class LSTMDecoder(Decoder):
         return logits
 
 
-class DecoderAttentionBlock(nn.Module):
+class TransformerDecoderLayer(nn.Module):
 
-    def __init__(self, d_model: int, num_heads: int):
+    def __init__(
+        self,
+        d_model: int,
+        num_heads: int,
+        self_attn_dropout: float,
+        cross_attn_dropout: float,
+        ffn_dropout: float,
+        ffn_dim: int,
+    ):
         super().__init__()
 
         self.self_attn = MultiHeadAttention(d_model, num_heads)
         self.cross_attn = MultiHeadAttention(d_model, num_heads)
 
         self.ffn = nn.Sequential(
-            nn.Linear(d_model, 4 * d_model),
+            nn.Linear(d_model, ffn_dim * d_model),
             nn.ReLU(),
-            nn.Linear(4 * d_model, d_model),
+            nn.Linear(ffn_dim * d_model, d_model),
         )
 
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
         self.norm3 = nn.LayerNorm(d_model)
+
+        self.self_attn_dropout = nn.Dropout(self_attn_dropout)
+        self.cross_attn_dropout = nn.Dropout(cross_attn_dropout)
+        self.ffn_dropout = nn.Dropout(ffn_dropout)
 
     def forward(
         self,
@@ -173,7 +188,7 @@ class DecoderAttentionBlock(nn.Module):
             value=x,
             mask=trg_mask,
         )
-        x = self.norm1(x + attn_out)
+        x = self.norm1(x + self.self_attn_dropout(attn_out))
 
         cross_attn_out = self.cross_attn(
             query=x,
@@ -181,21 +196,28 @@ class DecoderAttentionBlock(nn.Module):
             value=encoder_hiddens,
             mask=src_mask,
         )
-        x = self.norm2(x + cross_attn_out)
+        x = self.norm2(x + self.cross_attn_dropout(cross_attn_out))
 
         ffn_out = self.ffn(x)
-        x = self.norm3(x + ffn_out)
+        x = self.norm3(x + self.ffn_dropout(ffn_out))
 
         return x
 
 
-@REGISTRY.register("decoder", "attention")
-class AttentionDecoder(Decoder):
+@REGISTRY.register("decoder", "transformer")
+class TransformerDecoder(Decoder):
     def __init__(self, config: DecoderConfig):
         super().__init__(config)
         self.dec_module = nn.ModuleList(
             [
-                DecoderAttentionBlock(config.embed_size, config.num_heads)
+                TransformerDecoderLayer(
+                    config.embed_size,
+                    config.num_heads,
+                    config.self_attn_dropout,
+                    config.cross_attn_dropout,
+                    config.ffn_dropout,
+                    config.ffn_dim,
+                )
                 for _ in range(config.layers)
             ]
         )
@@ -204,6 +226,9 @@ class AttentionDecoder(Decoder):
         )
 
         self.fc = nn.Linear(config.embed_size, config.vocab_size)
+
+        self.embed_dropout = nn.Dropout(self.config.embed_dropout)
+        self.fc_dropout = nn.Dropout(self.config.fc_dropout)
 
     @property
     def input_dim(self):
