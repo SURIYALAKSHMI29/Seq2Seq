@@ -1,8 +1,8 @@
 defaults:
-  - _self_
   - base_config
-  - encoder: attention
-  - decoder: attention
+  - encoder: transformer
+  - decoder: transformer
+  - _self_
 
 train:
   batch_size: 64
@@ -22,7 +22,8 @@ train:
 #   val: "data/processed/ef_val_french2eng.pt"
 #   src_vocab: "data/processed/ef_src_vocab_french2eng.pkl"
 #   trg_vocab: "data/processed/ef_trg_vocab_french2eng.pkl"
-#   model: "trained_models/seq2seq_ef_french2eng.pth"
+#   # model: "trained_models/seq2seq_ef_french2eng.pth"
+#   model: "trained_models/attention/seq2seq_ep5_lr0.001_layers1_heads4.pth"
 #   raw_data: "data/raw/eng-fra.txt"
 
 paths:
@@ -33,6 +34,16 @@ paths:
   model: "trained_models/seq2seq_ef_french2eng.pth"
   raw_data: "data/raw/eng-fra.txt"
 
-PAD: 0
-MAX_LEN: 10
-NUM_PREFIXES: 10
+
+# paths:
+#   train: "data/processed_r/ef_train_fe.pt"
+#   val: "data/processed_r/ef_val_fe.pt"
+#   src_vocab: "data/processed_r/ef_src_vocab_fe.pkl"
+#   trg_vocab: "data/processed_r/ef_trg_vocab_fe.pkl"
+#   model: "trained_models/seq2seq_exp_french2eng.pth"
+#   raw_data: "data/raw/eng-fra.txt"
+
+data:
+  PAD: 0
+  MAX_LEN: 10
+  NUM_PREFIXES: 10

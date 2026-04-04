@@ -1,0 +1,7 @@
+embed_size: 512
+num_heads: 4
+ffn_dim : 4
+layers: 1
+embed_dropout : 0.2
+attn_dropout : 0.1
+ffn_dropout : 0.2
