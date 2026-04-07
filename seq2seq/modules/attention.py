@@ -68,13 +68,14 @@ class MultiHeadAttention(nn.Module):
 
         Q = Q.transpose(1, 2)  # batch, heads, seq, head_dim
 
-        K = K.view(batch, K.shape[1], self.num_heads, self.head_dim).transpose(1, 2)
-        # batch, heads, seq, head_dim
+        K = K.view(batch, K.shape[1], self.num_heads, self.head_dim).permute(0, 2, 3, 1)
+        # batch, heads, head_dim, seq
 
         V = V.view(batch, V.shape[1], self.num_heads, self.head_dim).transpose(1, 2)
 
         # print("Scale", self.scale)
-        context = dot_product(Q, K.transpose(-2, -1), V, mask, self.scale)
+
+        context = dot_product(Q, K, V, mask, self.scale)
 
         context = context.transpose(1, 2).contiguous()
         context = context.view(batch, context.shape[1], self.d_model)
