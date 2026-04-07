@@ -4,11 +4,10 @@ from torch.nn.modules import loss
 import torch.optim as optim
 
 from seq2seq import Seq2Seq
-from configs.seq2seq_config import PAD, EOS
 
 
 def train_epoch(
-    model: Seq2Seq, criterion: loss, optimizer: optim, dataloader: DataLoader
+    model: Seq2Seq, criterion: loss, optimizer: optim, dataloader: DataLoader, PAD: int
 ):
     model.train()
     total_loss = 0
@@ -18,7 +17,9 @@ def train_epoch(
         optimizer.zero_grad()
 
         output = model(src, trg_input, src_lengths)
-        output_flat = output.view(-1, output.size(-1))
+        output = output[:, : trg_output.size(1), :]
+
+        output_flat = output.reshape(-1, output.size(-1))
         trg_flat = trg_output.reshape(-1)
 
         # print("trg_ouput sahpe:", trg_output.shape)
@@ -36,7 +37,7 @@ def train_epoch(
     return total_loss / len(dataloader)
 
 
-def val_epoch(model: Seq2Seq, criterion: loss, dataloader: DataLoader):
+def val_epoch(model: Seq2Seq, criterion: loss, dataloader: DataLoader, PAD: int):
     model.eval()
     total_loss = 0
 
@@ -45,7 +46,9 @@ def val_epoch(model: Seq2Seq, criterion: loss, dataloader: DataLoader):
             src_lengths = (src != PAD).sum(dim=1)
 
             output = model(src, trg_input, src_lengths, teacher_forcing=False)
-            output_flat = output.view(-1, output.size(-1))
+            output = output[:, : trg_output.size(1), :]
+
+            output_flat = output.reshape(-1, output.size(-1))
             trg_flat = trg_output.reshape(-1)
 
             loss = criterion(output_flat, trg_flat)
