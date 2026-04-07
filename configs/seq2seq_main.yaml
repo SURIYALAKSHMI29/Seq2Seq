@@ -5,9 +5,16 @@ defaults:
   - _self_
 
 train:
-  batch_size: 64
-  epochs: 1
-  lr: 0.001
+  batch_size: 128
+  epochs: 10
+  lr: 0.0005
+
+data:
+  PAD: 0
+  MAX_LEN: 14
+  NUM_PREFIXES: 20
+  src_vocab_size: 5000
+  trg_vocab_size: 3000
 
 # paths:
 #   train: "data/processed/ef_train_flt.pt"
@@ -22,17 +29,18 @@ train:
 #   val: "data/processed/ef_val_french2eng.pt"
 #   src_vocab: "data/processed/ef_src_vocab_french2eng.pkl"
 #   trg_vocab: "data/processed/ef_trg_vocab_french2eng.pkl"
-#   # model: "trained_models/seq2seq_ef_french2eng.pth"
-#   model: "trained_models/attention/seq2seq_ep5_lr0.001_layers1_heads4.pth"
+#   # model: "trained_models/seq2seq_ef_french2eng.pth"   
+#   model: "trained_models/seq2seq_lstm.pth"
+#   # model: "trained_models/attention/seq2seq_ep5_lr0.001_layers1_heads4.pth"
 #   raw_data: "data/raw/eng-fra.txt"
 
-paths:
-  train: "data/processed/ef_train_fe_420.pt"
-  val: "data/processed/ef_val_fe_420.pt"
-  src_vocab: "data/processed/ef_src_vocab_fe_420.pkl"
-  trg_vocab: "data/processed/ef_trg_vocab_fe_420.pkl"
-  model: "trained_models/seq2seq_ef_french2eng.pth"
-  raw_data: "data/raw/eng-fra.txt"
+# paths:
+#   train: "data/processed/ef_train_fe_420.pt"
+#   val: "data/processed/ef_val_fe_420.pt"
+#   src_vocab: "data/processed/ef_src_vocab_fe_420.pkl"
+#   trg_vocab: "data/processed/ef_trg_vocab_fe_420.pkl"
+#   model: "trained_models/seq2seq_ef_french2eng.pth"
+#   raw_data: "data/raw/eng-fra.txt"
 
 
 # paths:
@@ -43,7 +51,11 @@ paths:
 #   model: "trained_models/seq2seq_exp_french2eng.pth"
 #   raw_data: "data/raw/eng-fra.txt"
 
-data:
-  PAD: 0
-  MAX_LEN: 10
-  NUM_PREFIXES: 10
+paths:
+  train: "data/processed/fe_train_bpe_2.pt"
+  val: "data/processed/fe_val_bpe_2.pt"
+  src_vocab: "data/processed/fe_src_vocab_bpe_2.pkl"
+  trg_vocab: "data/processed/fe_trg_vocab_bpe_2.pkl"
+  # model: "trained_models/seq2seq_lstm_bpe_2.pth"
+  model: "trained_models/seq2seq_transformer_m4_used_weights.pth"
+  raw_data: "data/raw/eng-fra.txt"
