@@ -14,9 +14,6 @@ from seq2seq.training.trainer import train_epoch, val_epoch
 
 from seq2seq.schemas import Config
 
-# from configs.seq2seq_config import ENCODER_CONFIG, DECODER_CONFIG, TRAIN_CONFIG, PAD
-# from seq2seq.schemas import EncoderConfig, DecoderConfig
-
 
 def log_params(writer: SummaryWriter, ENCODER_CONFIG, DECODER_CONFIG, train_config):
     writer.add_text(
@@ -51,17 +48,24 @@ def train(cfg: Config):
 
     print("Started training")
     # train_dataloader, val_dataloader = get_dataloader()
-    (src_vocab, trg_vocab), train_dataloader, val_dataloader = get_dataloader(
+    (src_vocab_tk, trg_vocab_tk), train_dataloader, val_dataloader = get_dataloader(
         train_config, paths_config
     )
 
-    # ENCODER_CONFIG["vocab_size"] = len(src_vocab)
-    # DECODER_CONFIG["vocab_size"] = len(trg_vocab)
-    cfg.encoder.vocab_size = len(src_vocab)
-    cfg.decoder.vocab_size = len(trg_vocab)
+    # cfg.encoder.vocab_size = len(src_vocab)
+    # cfg.decoder.vocab_size = len(trg_vocab)
 
-    print("src vocab size", len(src_vocab))  # 30394  ## 21573
-    print("trg vocab size", len(trg_vocab))  # 46715  ## 35434
+    cfg.encoder.vocab_size = src_vocab_tk.get_vocab_size()
+    cfg.decoder.vocab_size = trg_vocab_tk.get_vocab_size()
+
+    # encoded = src_vocab_tk.encode("pouvons nous parler de la politique ?")
+    # print(encoded.tokens, "\n", encoded.ids)
+
+    # encoded_eng = trg_vocab_tk.encode("<SOS> i was disappointed with your paper. <EOS>")
+    # print(encoded_eng.tokens, "\n", encoded_eng.ids)
+
+    print("src vocab size", cfg.encoder.vocab_size)  # 30394  ## 21573
+    print("trg vocab size", cfg.decoder.vocab_size)  # 46715  ## 35434
 
     # encoder_config = EncoderConfig(**ENCODER_CONFIG)
     # decoder_config = DecoderConfig(**DECODER_CONFIG)
@@ -81,8 +85,10 @@ def train(cfg: Config):
 
     start = time.time()
     for epoch in range(train_config.epochs):
-        train_loss = train_epoch(model, criterion, optimizer, train_dataloader)
-        val_loss = val_epoch(model, criterion, val_dataloader)
+        train_loss = train_epoch(
+            model, criterion, optimizer, train_dataloader, cfg.data.PAD
+        )
+        val_loss = val_epoch(model, criterion, val_dataloader, cfg.data.PAD)
 
         print(f"Epoch {epoch}  |  Train {train_loss}  |  Val {val_loss}")
         writer.add_scalar("Loss/Train", train_loss, epoch)
