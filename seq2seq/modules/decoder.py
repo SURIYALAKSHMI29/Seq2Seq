@@ -5,13 +5,13 @@ import random
 
 from seq2seq.modules.attention import dot_product
 from seq2seq.registry import REGISTRY
-from seq2seq.schemas import DecoderConfig
+from seq2seq.schemas import BaseDecoderConfig
 from seq2seq.modules.attention import MultiHeadAttention
 from seq2seq.modules.encoding import positional_encoding
 
 
 class Decoder(nn.Module):
-    def __init__(self, config: DecoderConfig):
+    def __init__(self, config: BaseDecoderConfig):
         super().__init__()
         self.config = config
 
@@ -35,7 +35,7 @@ class Decoder(nn.Module):
 
 @REGISTRY.register("decoder", "lstm")
 class LSTMDecoder(Decoder):
-    def __init__(self, config: DecoderConfig):
+    def __init__(self, config: BaseDecoderConfig):
         super().__init__(config)
 
         self.tf_ratio = config.teacher_forcing_ratio
@@ -154,7 +154,7 @@ class TransformerDecoderLayer(nn.Module):
         self_attn_dropout: float,
         cross_attn_dropout: float,
         ffn_dropout: float,
-        ffn_dim: int,
+        ffn_multiplier: int,
     ):
         super().__init__()
 
@@ -162,9 +162,9 @@ class TransformerDecoderLayer(nn.Module):
         self.cross_attn = MultiHeadAttention(d_model, num_heads)
 
         self.ffn = nn.Sequential(
-            nn.Linear(d_model, ffn_dim * d_model),
+            nn.Linear(d_model, ffn_multiplier * d_model),
             nn.ReLU(),
-            nn.Linear(ffn_dim * d_model, d_model),
+            nn.Linear(ffn_multiplier * d_model, d_model),
         )
 
         self.norm1 = nn.LayerNorm(d_model)
@@ -206,7 +206,7 @@ class TransformerDecoderLayer(nn.Module):
 
 @REGISTRY.register("decoder", "transformer")
 class TransformerDecoder(Decoder):
-    def __init__(self, config: DecoderConfig):
+    def __init__(self, config: BaseDecoderConfig):
         super().__init__(config)
         self.dec_module = nn.ModuleList(
             [
@@ -216,7 +216,7 @@ class TransformerDecoder(Decoder):
                     config.self_attn_dropout,
                     config.cross_attn_dropout,
                     config.ffn_dropout,
-                    config.ffn_dim,
+                    config.ffn_multiplier,
                 )
                 for _ in range(config.layers)
             ]
@@ -247,6 +247,9 @@ class TransformerDecoder(Decoder):
 
         x = self.embed_dropout(self.embedding(trg_input))  # batch, seq_len, embed
         # print("x embeddings", x.shape)
+
+        ## scaled up -> embeddings dominates
+        x = x * (self.config.embed_size**0.5)
 
         ## positional encoding
         x = x + self.pe[:, :trg_len, :]
@@ -290,7 +293,7 @@ class TransformerDecoder(Decoder):
         else:
             generated = trg_input[:, 0].unsqueeze(1)  # <SOS>, (batch, 1)
 
-            for t in range(self.config.max_trg_len - 2):
+            for t in range(self.config.max_trg_len - 1):
 
                 logits = self._decoder_step(generated, encoder_hiddens, src_lengths)
 

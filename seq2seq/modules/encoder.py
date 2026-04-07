@@ -4,14 +4,14 @@ from torch import Tensor
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_sequence
 
 from seq2seq.registry import REGISTRY
-from seq2seq.schemas import EncoderConfig
+from seq2seq.schemas import BaseEncoderConfig
 from seq2seq.modules.attention import MultiHeadAttention
 from seq2seq.modules.encoding import positional_encoding
 
 
 class Encoder(nn.Module):
 
-    def __init__(self, config: EncoderConfig):
+    def __init__(self, config: BaseEncoderConfig):
         super().__init__()
         self.config = config
         self.embedding: nn.Embedding = nn.Embedding(
@@ -24,7 +24,7 @@ class Encoder(nn.Module):
 
 @REGISTRY.register("encoder", "lstm")
 class LSTMEncoder(Encoder):
-    def __init__(self, config: EncoderConfig):
+    def __init__(self, config: BaseEncoderConfig):
         super().__init__(config)
         self.enc_module = nn.LSTM(
             config.embed_size,
@@ -62,16 +62,16 @@ class TransformerEncoderLayer(nn.Module):
         num_heads: int,
         attn_dropout: int,
         ffn_dropout: int,
-        ffn_dim: int,
+        ffn_multiplier: int,
     ):
         super().__init__()
 
         self.self_attn = MultiHeadAttention(d_model, num_heads)
 
         self.ffn = nn.Sequential(
-            nn.Linear(d_model, ffn_dim * d_model),
+            nn.Linear(d_model, ffn_multiplier * d_model),
             nn.ReLU(),
-            nn.Linear(ffn_dim * d_model, d_model),
+            nn.Linear(ffn_multiplier * d_model, d_model),
         )
 
         self.norm1 = nn.LayerNorm(d_model)
@@ -101,7 +101,7 @@ class TransformerEncoderLayer(nn.Module):
 
 @REGISTRY.register("encoder", "transformer")
 class TransformerEncoder(Encoder):
-    def __init__(self, config: EncoderConfig):
+    def __init__(self, config: BaseEncoderConfig):
         super().__init__(config)
         self.enc_module = nn.ModuleList(
             [
@@ -110,7 +110,7 @@ class TransformerEncoder(Encoder):
                     config.num_heads,
                     config.attn_dropout,
                     config.ffn_dropout,
-                    config.ffn_dim,
+                    config.ffn_multiplier,
                 )
                 for _ in range(config.layers)
             ]
@@ -134,6 +134,9 @@ class TransformerEncoder(Encoder):
         x = self.embed_dropout(self.embedding(x))  # batch, seq_len, embed
         # print("x embeddings", x.shape)
 
+        ## scaled up -> embeddings dominates
+        x = x * (self.config.embed_size**0.5)
+
         x = x + self.pe[:, :max_src_len, :]
 
         mask = (
@@ -143,7 +146,7 @@ class TransformerEncoder(Encoder):
             )
             .unsqueeze(1)
             .unsqueeze(1)
-        )
+        ).to(x.device)
         # batch, 1, 1, max_src_len
 
         # print("mask", mask.shape)
