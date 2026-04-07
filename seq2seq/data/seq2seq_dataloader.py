@@ -36,10 +36,10 @@ def build_and_save_dataset(cfg: Config):
     # )
     # print(encoded_eng.tokens, "\n", encoded_eng.ids)
 
-    # src, trg_in, trg_out = preprocess_dataset(train, src_tokenizer, trg_tokenizer)
-    # src_test, trg_in_test, trg_out_test = preprocess_dataset(
-    #     test, src_tokenizer, trg_tokenizer
-    # )
+    src, trg_in, trg_out = preprocess_dataset(train, src_tokenizer, trg_tokenizer)
+    src_test, trg_in_test, trg_out_test = preprocess_dataset(
+        test, src_tokenizer, trg_tokenizer
+    )
 
     # src_lengths = [len(src_tokenizer.encode(s)) for s in train["src"]]
     # trg_lengths = [len(trg_tokenizer.encode(s)) for s in train["trg"]]
