@@ -8,10 +8,10 @@ class BaseEncoderConfig:
     model_name: str
     vocab_size: int
     embed_size: int
-    layers: Optional[int] = 1
+    layers: int = 1
     embed_dropout: float = 0.0
     category: str = "encoder"
-    max_src_len: Optional[int] = 6
+    max_src_len: int = 30
 
 
 @dataclass(kw_only=True)
@@ -24,8 +24,8 @@ class LSTMEncoderConfig(BaseEncoderConfig):
 @dataclass(kw_only=True)
 class TransformerEncoderConfig(BaseEncoderConfig):
     model_name: str = "transformer"
-    ffn_dim: int = 4
-    num_heads: Optional[int] = 1
+    ffn_multiplier: int = 4
+    num_heads: int = 1
     attn_dropout: float = 0.0
     ffn_dropout: float = 0.0
 
@@ -35,11 +35,11 @@ class BaseDecoderConfig:
     model_name: str
     vocab_size: int
     embed_size: int
-    layers: Optional[int] = 1
+    layers: int = 1
     embed_dropout: float = 0.0
     fc_dropout: float = 0.0
     category: str = "decoder"
-    max_trg_len: Optional[int] = 7
+    max_trg_len: int = 30
 
 
 @dataclass(kw_only=True)
@@ -47,15 +47,15 @@ class LSTMDecoderConfig(BaseDecoderConfig):
     hidden_size: int
     model_name: str = "lstm"
     bidirectional: Optional[bool] = True
-    attention: Optional[bool] = True
-    teacher_forcing_ratio: Optional[float] = 0.5
+    attention: bool = True
+    teacher_forcing_ratio: float = 0.5
 
 
 @dataclass(kw_only=True)
 class TransformerDecoderConfig(BaseDecoderConfig):
     model_name: str = "transformer"
     num_heads: int = 1
-    ffn_dim: int = 4
+    ffn_multiplier: int = 4
     self_attn_dropout: float = 0.0
     cross_attn_dropout: float = 0.0
     ffn_dropout: float = 0.0
@@ -83,6 +83,8 @@ class DataConfig:
     PAD: int = 0
     MAX_LEN: int = 10
     NUM_PREFIXES: int = 10
+    src_vocab_size: int = 5000
+    trg_vocab_size: int = 5000
 
 
 @dataclass
