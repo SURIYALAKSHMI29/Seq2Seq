@@ -1,5 +1,10 @@
-embed_size: 256
-hidden_size: 512
-layers: 1
-bidirectional: True
-embed_dropout: 0.2
+embedding:
+  dim: 256
+
+architecture:
+  hidden_size: 512
+  layers: 1
+  bidirectional: true
+
+regularization:
+  embed_dropout: 0.2

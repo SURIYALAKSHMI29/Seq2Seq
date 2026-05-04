@@ -1,9 +1,15 @@
-embed_size: 512
-layers: 2
-num_heads: 8
-ffn_multiplier: 4
-embed_dropout: 0.2
-self_attn_dropout: 0.1
-cross_attn_dropout: 0.2
-ffn_dropout: 0.2
-fc_dropout: 0.3
+embedding:
+  dim: 512
+  
+attention:
+  layers: 2
+  num_heads: 8
+  ffn_multiplier: 4
+
+regularization:
+  embed_dropout: 0.2
+  self_attn_dropout: 0.1
+  cross_attn_dropout: 0.2
+  ffn_dropout: 0.2
+  fc_dropout: 0.3
+

@@ -1,17 +1,19 @@
+from typing import Type
+
 import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_sequence
 
-from seq2seq.registry import REGISTRY
-from seq2seq.schemas import BaseEncoderConfig
 from seq2seq.modules.attention import MultiHeadAttention
-from seq2seq.modules.encoding import positional_encoding
+from seq2seq.modules.embedding import positional_encoding
+from seq2seq.registry import REGISTRY
+from seq2seq.schemas import BaseCmpConfig
 
 
 class Encoder(nn.Module):
 
-    def __init__(self, config: BaseEncoderConfig):
+    def __init__(self, config: BaseCmpConfig):
         super().__init__()
         self.config = config
         self.embedding: nn.Embedding = nn.Embedding(
@@ -24,7 +26,7 @@ class Encoder(nn.Module):
 
 @REGISTRY.register("encoder", "lstm")
 class LSTMEncoder(Encoder):
-    def __init__(self, config: BaseEncoderConfig):
+    def __init__(self, config: BaseCmpConfig):
         super().__init__(config)
         self.enc_module = nn.LSTM(
             config.embed_size,
@@ -55,14 +57,15 @@ class LSTMEncoder(Encoder):
         return {"outputs": outputs, "hidden": hidden, "cell": cell}
 
 
-class TransformerEncoderLayer(nn.Module):
+class EncoderBlock(nn.Module):
     def __init__(
         self,
         d_model: int,
         num_heads: int,
-        attn_dropout: int,
-        ffn_dropout: int,
+        attn_dropout: float,
+        ffn_dropout: float,
         ffn_multiplier: int,
+        activation: Type[nn.Module],
     ):
         super().__init__()
 
@@ -70,7 +73,7 @@ class TransformerEncoderLayer(nn.Module):
 
         self.ffn = nn.Sequential(
             nn.Linear(d_model, ffn_multiplier * d_model),
-            nn.ReLU(),
+            activation(),
             nn.Linear(ffn_multiplier * d_model, d_model),
         )
 
@@ -85,6 +88,15 @@ class TransformerEncoderLayer(nn.Module):
         x: Tensor,
         mask: Tensor,
     ):
+        # normalized_x = self.norm1(x)
+        # attn_out_norm = self.self_attn(
+        #     query=normalized_x,
+        #     key=normalized_x,
+        #     value=normalized_x,
+        #     mask=mask,
+        # )
+        # x = x + self.attn_dropout(attn_out_norm)
+
         attn_out = self.self_attn(
             query=x,
             key=x,
@@ -101,16 +113,18 @@ class TransformerEncoderLayer(nn.Module):
 
 @REGISTRY.register("encoder", "transformer")
 class TransformerEncoder(Encoder):
-    def __init__(self, config: BaseEncoderConfig):
+    def __init__(self, config: BaseCmpConfig):
         super().__init__(config)
-        self.enc_module = nn.ModuleList(
+        self.activation = self.get_activation(config.attention.activation.lower())
+        self.layers = nn.ModuleList(
             [
-                TransformerEncoderLayer(
+                EncoderBlock(
                     config.embed_size,
                     config.num_heads,
                     config.attn_dropout,
                     config.ffn_dropout,
                     config.ffn_multiplier,
+                    self.activation,
                 )
                 for _ in range(config.layers)
             ]
@@ -125,6 +139,19 @@ class TransformerEncoder(Encoder):
     @property
     def output_dim(self):
         return self.config.embed_size
+
+    def get_activation(self, activation_name):
+        ACTIVATIONS = {
+            "relu": nn.ReLU,
+            "gelu": nn.GELU,
+        }
+
+        if activation_name not in ACTIVATIONS:
+            raise ValueError(
+                f"Activation {activation_name} not in {list(ACTIVATIONS.keys())}"
+            )
+
+        return ACTIVATIONS[activation_name]
 
     def forward(self, x: Tensor, lengths: Tensor):
         # print("raw x", x.shape)
@@ -151,7 +178,7 @@ class TransformerEncoder(Encoder):
 
         # print("mask", mask.shape)
 
-        for layer in self.enc_module:
+        for layer in self.layers:
             x = layer(x, mask)
 
         return {"outputs": x}

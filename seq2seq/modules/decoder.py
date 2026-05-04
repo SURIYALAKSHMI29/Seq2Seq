@@ -7,7 +7,7 @@ from seq2seq.modules.attention import dot_product
 from seq2seq.registry import REGISTRY
 from seq2seq.schemas import BaseDecoderConfig
 from seq2seq.modules.attention import MultiHeadAttention
-from seq2seq.modules.encoding import positional_encoding
+from seq2seq.modules.embedding import positional_encoding
 
 
 class Decoder(nn.Module):
@@ -145,7 +145,7 @@ class LSTMDecoder(Decoder):
         return logits
 
 
-class TransformerDecoderLayer(nn.Module):
+class TransformerDecoderBlock(nn.Module):
 
     def __init__(
         self,
@@ -208,9 +208,9 @@ class TransformerDecoderLayer(nn.Module):
 class TransformerDecoder(Decoder):
     def __init__(self, config: BaseDecoderConfig):
         super().__init__(config)
-        self.dec_module = nn.ModuleList(
+        self.layers = nn.ModuleList(
             [
-                TransformerDecoderLayer(
+                TransformerDecoderBlock(
                     config.embed_size,
                     config.num_heads,
                     config.self_attn_dropout,
@@ -266,9 +266,9 @@ class TransformerDecoder(Decoder):
             )
             .unsqueeze(1)
             .unsqueeze(1)
-        )  # batch, 1, 1, trg_len
+        )  # batch, 1, 1, src_len
 
-        for layer in self.dec_module:
+        for layer in self.layers:
             x = layer(
                 x,
                 encoder_hiddens,

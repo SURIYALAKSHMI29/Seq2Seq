@@ -1,8 +1,13 @@
-embed_size: 256
-hidden_size: 512
-layers: 1
-bidirectional: False
-attention: True 
-teacher_forcing_ratio: 0.6
-embed_dropout: 0.2
-fc_dropout: 0.2
+embedding:
+  dim: 256
+
+architecture:
+  hidden_size: 512
+  layers: 1
+  bidirectional: false
+  attention: true 
+  teacher_forcing_ratio: 0.6
+
+regularization:
+  embed_dropout: 0.2
+  fc_dropout: 0.2

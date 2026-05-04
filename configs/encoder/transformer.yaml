@@ -1,7 +1,13 @@
-embed_size: 512
-layers: 2
-num_heads: 8
-ffn_multiplier : 4
-embed_dropout : 0.2
-attn_dropout : 0.1
-ffn_dropout : 0.2
+embedding:
+  dim: 512
+
+attention:
+  layers: 2
+  num_heads: 8
+  ffn_multiplier: 4
+  activation: relu
+
+regularization:
+  embed_dropout: 0.2
+  attn_dropout: 0.1
+  ffn_dropout: 0.2

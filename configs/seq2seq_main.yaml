@@ -4,17 +4,41 @@ defaults:
   - decoder: transformer
   - _self_
 
-train:
-  batch_size: 128
-  epochs: 10
-  lr: 0.0005
+model:
+  encoder: transformer
+  decoder: transformer
+  saved_model_path: "trained_models/seq2seq_transformer_m2.pth"
 
 data:
-  PAD: 0
-  MAX_LEN: 14
-  NUM_PREFIXES: 20
-  src_vocab_size: 5000
-  trg_vocab_size: 3000
+  batch_size: 128
+
+  raw_data_path: "data/raw/eng-fra.txt"
+
+  vocab:
+    MAX_LEN: 14
+    NUM_PREFIXES: 20
+    PAD: 0
+    src_vocab_size: 5000
+    trg_vocab_size: 3000
+    src_vocab: "data/processed/fe_src_vocab_bpe_2.pkl"
+    trg_vocab: "data/processed/fe_trg_vocab_bpe_2.pkl"
+
+  train:
+    data_path: "data/processed/fe_train_bpe_2.pt"
+  
+  val:
+    data_path: "data/processed/fe_val_bpe_2.pt"
+
+optimizer:
+  name: Adam
+  kwargs:
+    lr: 0.0001
+    weight_decay: 0.0
+    betas: [0.9, 0.98]
+    eps: 1e-5
+
+trainer:
+  max_epochs: 10
 
 # paths:
 #   train: "data/processed/ef_train_flt.pt"
@@ -51,11 +75,11 @@ data:
 #   model: "trained_models/seq2seq_exp_french2eng.pth"
 #   raw_data: "data/raw/eng-fra.txt"
 
-paths:
-  train: "data/processed/fe_train_bpe_2.pt"
-  val: "data/processed/fe_val_bpe_2.pt"
-  src_vocab: "data/processed/fe_src_vocab_bpe_2.pkl"
-  trg_vocab: "data/processed/fe_trg_vocab_bpe_2.pkl"
-  # model: "trained_models/seq2seq_lstm_bpe_2.pth"
-  model: "trained_models/seq2seq_transformer_m4_used_weights.pth"
-  raw_data: "data/raw/eng-fra.txt"
+# paths:
+#   train: "data/processed/fe_train_bpe_2.pt"
+#   val: "data/processed/fe_val_bpe_2.pt"
+#   src_vocab: "data/processed/fe_src_vocab_bpe_2.pkl"
+#   trg_vocab: "data/processed/fe_trg_vocab_bpe_2.pkl"
+#   # model: "trained_models/seq2seq_lstm_bpe_2.pth"
+#   model: "trained_models/seq2seq_transformer_m2.pth"
+#   raw_data: "data/raw/eng-fra.txt"

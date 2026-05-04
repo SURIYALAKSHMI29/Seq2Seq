@@ -62,8 +62,8 @@ def evaluate(model, criterion, dataloader, trg_vocab_inv, PAD, EOS):
                 #         break
                 #     pred_words.append(trg_vocab_inv.get(id, "<unk>"))
 
-                ref_words = decode_tokens(trg_output[i], trg_vocab_inv, PAD, EOS)
-                pred_words = decode_tokens(preds[i], trg_vocab_inv, PAD, EOS)
+                ref_words = decode_tokens(trg_output[i], trg_vocab_inv)
+                pred_words = decode_tokens(preds[i], trg_vocab_inv)
 
                 # BLEU expects reference as a list of references
                 ref = [ref_words]
@@ -84,20 +84,37 @@ def evaluate(model, criterion, dataloader, trg_vocab_inv, PAD, EOS):
     return avg_loss, token_acc, avg_bleu, samples
 
 
-def decode_tokens(data: Tensor, tokenizer, PAD, EOS):
-    # words = []
-    # for idx in data:
-    #     if idx.item() == EOS or idx.item() == PAD:
-    #         break
-    #     words.append(vocab.get(idx.item(), -1))
-    # return " ".join(words)
-
-    # PAD = tokenizer.token_to_id("<PAD>")
-    # EOS = tokenizer.token_to_id("<EOS>")
-
+def decode_tokens(data: Tensor, tokenizer, debug=False):
     token_ids = data.tolist()
+    num_tokens = len(token_ids)
+    if debug:
+        if num_tokens != 29:
+            print(
+                num_tokens,
+                tokenizer.decode(token_ids, skip_special_tokens=True),
+                token_ids,
+            )
 
-    return tokenizer.decode(token_ids)
+        if token_ids.__contains__(tokenizer.token_to_id("<EOS>")):
+            print("has <EOS> token")
+            print(token_ids.index(tokenizer.token_to_id("<EOS>")))
+
+    if tokenizer.token_to_id("<EOS>") in token_ids:
+        eos_indx = token_ids.index(tokenizer.token_to_id("<EOS>"))
+        token_ids = token_ids[:eos_indx]
+
+    decoded = tokenizer.decode(token_ids)
+
+    return decoded
+
+
+# def decode_tokens(data: Tensor, vocab, PAD, EOS):
+#     words = []
+#     for idx in data:
+#         if idx.item() == EOS or idx.item() == PAD:
+#             break
+#         words.append(vocab.get(idx.item(), -1))
+#     return " ".join(words)
 
 
 @hydra.main(version_base=None, config_path="../../configs", config_name="seq2seq_main")
@@ -157,9 +174,9 @@ def validate(cfg: Config):
         # print("Target   :", decode_tokens(trg_tensor, trg_vocab_inv, PAD, EOS))
         # print("Predicted:", decode_tokens(pred_tensor, trg_vocab_inv, PAD, EOS))
 
-        print("Input    :", decode_tokens(src_tensor, src_vocab_tk, PAD, -1))
-        print("Target   :", decode_tokens(trg_tensor, trg_vocab_tk, PAD, EOS))
-        print("Predicted:", decode_tokens(pred_tensor, trg_vocab_tk, PAD, EOS))
+        print("Input    :", decode_tokens(src_tensor, src_vocab_tk))
+        print("Target   :", decode_tokens(trg_tensor, trg_vocab_tk))
+        print("Predicted:", decode_tokens(pred_tensor, trg_vocab_tk))
 
         print("\n", "--" * 50, "\n")
 

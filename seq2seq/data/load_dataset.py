@@ -30,9 +30,9 @@ def filterPairs(pairs, prefixes, MAX_LEN):
     return [pair for pair in pairs if filterPair(pair, prefixes, MAX_LEN)]
 
 
-def load_ceng2french_dataset(paths, MAX_LEN, NUM_PREFIXES):
+def load_ceng2french_dataset(data_cfg, MAX_LEN, NUM_PREFIXES):
     pairs = []
-    path = paths.raw_data
+    path = data_cfg.raw_data_path
     with open(path, encoding="utf-8") as f:
         for line in f:
             eng, fra = line.strip().lower().split("\t")
