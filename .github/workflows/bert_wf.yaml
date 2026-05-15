@@ -1,4 +1,4 @@
-name: CI
+name: BERT CI
 
 on: push
 
@@ -62,6 +62,6 @@ jobs:
 
       - name: Install py packages
         run: pip install -r requirements.txt
-        
+
       - name: BERT train
         run: poetry run python -m seq2seq.training.train_bert 
