@@ -39,8 +39,21 @@ class BERT(nn.Module):
             ]
         )
 
+        self.mlm_head = nn.Linear(config.embedding.dim, config.data.vocab_size)
+
         self.embed_dropout = nn.Dropout(config.regularization.embed_dropout)
         self.embed_norm = nn.LayerNorm(config.embedding.dim)
+
+        self.apply(self._init_weight)
+
+    def _init_weight(self, module):
+        if isinstance(module, nn.Embedding):
+            nn.init.constant_(module.weight, 0.02)
+            # print(module, "embedding")
+
+        if isinstance(module, nn.Linear):
+            nn.init.xavier_uniform_(module.weight)
+            # print(module, "linear")
 
     def get_activation(self, activation_name):
         ACTIVATIONS = {
@@ -57,23 +70,25 @@ class BERT(nn.Module):
 
     def embeddings(self, input_ids: Tensor, token_type_ids: Tensor):
 
-        # print("X shape", x.shape)  # batch, seq_len
+        print("X shape", input_ids.shape)  # batch, seq_len
 
         token_embeddings = self.token_embedding(input_ids)  # batch, seq_len, embed
-        # print("token embeddings", token_embeddings.shape)
+        print("token embeddings", token_embeddings.shape)
 
         position_embeddings = self.positional_embedding(
             torch.arange(input_ids.shape[1])
-        )  # seq_len, embed
+        ).unsqueeze(
+            0
+        )  # 1, seq_len, embed
 
-        # print("x shape 1", x.shape[1])  # seq_len
-        # print("position embeddings", position_embeddings.shape)
+        print("x shape[1]", input_ids.shape[1])  # seq_len
+        print("position embeddings", position_embeddings.shape)
 
-        # print("segments", segments.shape)  # batch, seq_len
+        print("segments", token_type_ids.shape)  # batch, seq_len
         segment_embeddings = self.segment_embedding(
             token_type_ids
         )  # batch, seq_len, embed
-        # print("segment embeddings", segment_embeddings.shape)
+        print("segment embeddings", segment_embeddings.shape)
 
         norm_embedding = self.embed_norm(
             token_embeddings + position_embeddings + segment_embeddings
@@ -106,7 +121,9 @@ class BERT(nn.Module):
         last_hidden_state = x
         cls_output = x[:, 0]
 
-        return last_hidden_state, cls_output
+        logits = self.mlm_head(last_hidden_state)
+
+        return logits, last_hidden_state, cls_output
 
 
 @hydra.main(version_base=None, config_path="../../configs", config_name="bert")
