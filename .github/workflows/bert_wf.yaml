@@ -47,7 +47,7 @@ jobs:
         
   Train:
     runs-on: ubuntu-latest
-    name: test
+    name: train
     needs: Setup_env
 
     steps:
