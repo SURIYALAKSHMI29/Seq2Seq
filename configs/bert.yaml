@@ -3,7 +3,7 @@ defaults:
   - _self_   
   
 data:
-  batch: 32
+  batch: 1
   vocab_size: 15
   max_src_len: 10
   num_segments: 2
@@ -15,8 +15,8 @@ embedding:
   dim: 8
 
 attention:
-  layers: 2
-  num_heads: 2
+  layers: 1
+  num_heads: 1
   ffn_multiplier: 4
   activation: gelu
 
