@@ -139,8 +139,22 @@ def test_bert(cfg: BERTConfig):
     bert = BERT(cfg)
     print("\n\nBert model", bert)
 
-    last_hidden_state, cls_output = bert(input_ids, token_type_ids, src_lengths)
-    print("\n\last_hiden_state shape", last_hidden_state.shape)  # batch, seq_len, embed
+    logits, last_hidden_state, cls_output = bert(input_ids, token_type_ids, src_lengths)
+    print("\n\nlogits shape", logits.shape)  # batch, seq_len, vocab_size
+    print("last_hidden_state shape", last_hidden_state.shape)  # batch, seq_len, embed
+
+    assert last_hidden_state.shape == (
+        cfg.data.batch,
+        cfg.data.max_src_len,
+        cfg.embedding.dim,
+    ), f"Expected last_hidden_state shape {(cfg.data.batch, cfg.data.max_src_len, cfg.embedding.dim)}, but got {last_hidden_state.shape}"
+
+    assert logits.shape == (
+        cfg.data.batch,
+        cfg.data.max_src_len,
+        cfg.data.vocab_size,
+    ), f"Expected logits shape {(cfg.data.batch, cfg.data.max_src_len, cfg.data.vocab_size)}, but got {logits.shape}"
+
     print("cls output shape", cls_output.shape)
 
 
