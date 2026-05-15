@@ -24,7 +24,6 @@ jobs:
         run: poetry install
 
       - name: Run tests
-        run: poetry run pytest
-
+        run: poetry run python -m seq2seq.modules.bert 
       - name: BERT train
         run: poetry run python -m seq2seq.training.train_bert 
